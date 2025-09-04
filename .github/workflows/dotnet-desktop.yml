@@ -18,8 +18,8 @@ jobs:
       Solution_Name: BotOrNot
       Test_Project_Path: BotOrNot\BotOrNot.csproj
       # ⬇️ set these to your actual WAP (MSIX) project, not placeholders
-      Wap_Project_Directory: MyApp.Package
-      Wap_Project_Path: MyApp.Package\MyApp.Package.wapproj
+      Wap_Project_Directory: BotOrNot.Package
+      Wap_Project_Path: BotOrNot.Package\BotOrNot.Package.wapproj
       # computed: if both secrets exist => 'true', else 'false'
       SIGNING_ENABLED: ${{ secrets.Base64_Encoded_Pfx != '' && secrets.Pfx_Key != '' }}
 
