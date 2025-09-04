@@ -194,3 +194,4 @@ C:\Users\ken\RiderProjects\BotOrNot\BotOrNot\obj\Debug\net9.0-windows\refint\Bot
 C:\Users\ken\RiderProjects\BotOrNot\BotOrNot\obj\Debug\net9.0-windows\BotOrNot.pdb
 C:\Users\ken\RiderProjects\BotOrNot\BotOrNot\obj\Debug\net9.0-windows\BotOrNot.genruntimeconfig.cache
 C:\Users\ken\RiderProjects\BotOrNot\BotOrNot\obj\Debug\net9.0-windows\ref\BotOrNot.dll
+C:\Users\ken\RiderProjects\BotOrNot\BotOrNot\obj\Debug\net9.0-windows\BotOrNot.sourcelink.json
