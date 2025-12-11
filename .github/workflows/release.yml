@@ -32,10 +32,14 @@ jobs:
             --self-contained true `
             --output ./publish/win-x64 `
             -p:PublishSingleFile=true `
-            -p:IncludeNativeLibrariesForSelfExtract=true
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:DebugType=none `
+            -p:DebugSymbols=false
 
       - name: Create ZIP
-        run: Compress-Archive -Path ./publish/win-x64/* -DestinationPath ./BotOrNot-Windows-x64.zip
+        run: |
+          Remove-Item ./publish/win-x64/*.pdb -ErrorAction SilentlyContinue
+          Compress-Archive -Path ./publish/win-x64/* -DestinationPath ./BotOrNot-Windows-x64.zip
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
