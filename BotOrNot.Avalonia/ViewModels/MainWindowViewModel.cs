@@ -97,10 +97,10 @@ public class MainWindowViewModel : ReactiveObject
             var botPlayers = data.Players.Count(p => p.Bot?.Equals("true", StringComparison.OrdinalIgnoreCase) == true);
             var humanPlayers = totalPlayers - botPlayers;
 
-            // Group by platform and build platform breakdown string
+            // Group by platform (using friendly names) and build platform breakdown string
             var platformGroups = data.Players
                 .Where(p => !string.IsNullOrWhiteSpace(p.Platform))
-                .GroupBy(p => p.Platform)
+                .GroupBy(p => PlatformHelper.GetFriendlyName(p.Platform))
                 .OrderByDescending(g => g.Count())
                 .Select(g => $"{g.Count()} {g.Key}")
                 .ToList();

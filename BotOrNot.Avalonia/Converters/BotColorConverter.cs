@@ -49,3 +49,18 @@ public class BotBorderColorConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+
+public class PlatformNameConverter : IValueConverter
+{
+    public static readonly PlatformNameConverter Instance = new();
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        return BotOrNot.Core.Services.PlatformHelper.GetFriendlyName(value as string);
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
