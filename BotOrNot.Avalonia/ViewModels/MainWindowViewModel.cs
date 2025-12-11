@@ -13,9 +13,9 @@ public class MainWindowViewModel : ReactiveObject
 
     private ObservableCollection<PlayerRow> _players = new();
     private ObservableCollection<PlayerRow> _ownerEliminations = new();
-    private ObservableCollection<string> _eliminations = new();
     private string _metadataText = "";
     private string _ownerKillsHeader = "Your Eliminations";
+    private string _playersSeenHeader = "Players Seen";
     private bool _isLoading;
     private string? _errorMessage;
 
@@ -37,12 +37,6 @@ public class MainWindowViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _players, value);
     }
 
-    public ObservableCollection<string> Eliminations
-    {
-        get => _eliminations;
-        set => this.RaiseAndSetIfChanged(ref _eliminations, value);
-    }
-
     public ObservableCollection<PlayerRow> OwnerEliminations
     {
         get => _ownerEliminations;
@@ -53,6 +47,12 @@ public class MainWindowViewModel : ReactiveObject
     {
         get => _ownerKillsHeader;
         set => this.RaiseAndSetIfChanged(ref _ownerKillsHeader, value);
+    }
+
+    public string PlayersSeenHeader
+    {
+        get => _playersSeenHeader;
+        set => this.RaiseAndSetIfChanged(ref _playersSeenHeader, value);
     }
 
     public string MetadataText
@@ -85,17 +85,34 @@ public class MainWindowViewModel : ReactiveObject
             var data = await _replayService.LoadReplayAsync(path);
 
             Players = new ObservableCollection<PlayerRow>(data.Players);
-            Eliminations = new ObservableCollection<string>(data.Eliminations);
             OwnerEliminations = new ObservableCollection<PlayerRow>(data.OwnerEliminations);
 
             var ownerDisplay = !string.IsNullOrEmpty(data.OwnerName) ? data.OwnerName : "Your";
-            OwnerKillsHeader = $"{ownerDisplay}'s Eliminations ({data.OwnerEliminations.Count})";
+            var botKills = data.OwnerEliminations.Count(p => p.Bot?.Equals("true", StringComparison.OrdinalIgnoreCase) == true);
+            var playerKills = data.OwnerEliminations.Count - botKills;
+            OwnerKillsHeader = $"{ownerDisplay}'s Eliminations ({data.OwnerEliminations.Count}) - {playerKills} Players, {botKills} Bots";
+
+            // Build Players Seen header with breakdown
+            var totalPlayers = data.Players.Count;
+            var botPlayers = data.Players.Count(p => p.Bot?.Equals("true", StringComparison.OrdinalIgnoreCase) == true);
+            var humanPlayers = totalPlayers - botPlayers;
+
+            // Group by platform and build platform breakdown string
+            var platformGroups = data.Players
+                .Where(p => !string.IsNullOrWhiteSpace(p.Platform))
+                .GroupBy(p => p.Platform)
+                .OrderByDescending(g => g.Count())
+                .Select(g => $"{g.Count()} {g.Key}")
+                .ToList();
+
+            var platformBreakdown = platformGroups.Count > 0 ? " | " + string.Join(", ", platformGroups) : "";
+            PlayersSeenHeader = $"Players Seen ({totalPlayers}) - {humanPlayers} Players, {botPlayers} Bots{platformBreakdown}";
 
             MetadataText = $"File: {data.Metadata.FileName}\n" +
                           $"Mode: {data.Metadata.GameMode}\n" +
                           $"Duration: {data.Metadata.MatchDurationMinutes:F1} minutes\n" +
                           $"Players: {data.Metadata.PlayerCount}" + (data.Metadata.MaxPlayers.HasValue ? $" (Max: {data.Metadata.MaxPlayers})" : "") + "\n" +
-                          $"Eliminations: {data.Metadata.EliminationCount}";
+                          $"Eliminations (in replay): {data.Metadata.EliminationCount}";
         }
         finally
         {
