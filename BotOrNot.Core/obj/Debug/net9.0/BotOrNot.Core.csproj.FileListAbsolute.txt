@@ -1,0 +1,13 @@
+/Users/ken/RiderProjects/BotOrNot/BotOrNot.Core/obj/Debug/net9.0/BotOrNot.Core.csproj.AssemblyReference.cache
+/Users/ken/RiderProjects/BotOrNot/BotOrNot.Core/obj/Debug/net9.0/BotOrNot.Core.GeneratedMSBuildEditorConfig.editorconfig
+/Users/ken/RiderProjects/BotOrNot/BotOrNot.Core/obj/Debug/net9.0/BotOrNot.Core.AssemblyInfoInputs.cache
+/Users/ken/RiderProjects/BotOrNot/BotOrNot.Core/obj/Debug/net9.0/BotOrNot.Core.AssemblyInfo.cs
+/Users/ken/RiderProjects/BotOrNot/BotOrNot.Core/obj/Debug/net9.0/BotOrNot.Core.csproj.CoreCompileInputs.cache
+/Users/ken/RiderProjects/BotOrNot/BotOrNot.Core/obj/Debug/net9.0/BotOrNot.Core.sourcelink.json
+/Users/ken/RiderProjects/BotOrNot/BotOrNot.Core/bin/Debug/net9.0/BotOrNot.Core.deps.json
+/Users/ken/RiderProjects/BotOrNot/BotOrNot.Core/bin/Debug/net9.0/BotOrNot.Core.dll
+/Users/ken/RiderProjects/BotOrNot/BotOrNot.Core/bin/Debug/net9.0/BotOrNot.Core.pdb
+/Users/ken/RiderProjects/BotOrNot/BotOrNot.Core/obj/Debug/net9.0/BotOrNot.Core.dll
+/Users/ken/RiderProjects/BotOrNot/BotOrNot.Core/obj/Debug/net9.0/refint/BotOrNot.Core.dll
+/Users/ken/RiderProjects/BotOrNot/BotOrNot.Core/obj/Debug/net9.0/BotOrNot.Core.pdb
+/Users/ken/RiderProjects/BotOrNot/BotOrNot.Core/obj/Debug/net9.0/ref/BotOrNot.Core.dll

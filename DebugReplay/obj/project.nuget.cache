@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "dgSpecHash": "09nrcb3ONLQ=",
+  "success": true,
+  "projectFilePath": "/Users/ken/RiderProjects/BotOrNot/DebugReplay/DebugReplay.csproj",
+  "expectedPackageFiles": [
+    "/Users/ken/.nuget/packages/fortnitereplayreader/2.4.0/fortnitereplayreader.2.4.0.nupkg.sha512",
+    "/Users/ken/.nuget/packages/microsoft.extensions.dependencyinjection/9.0.0/microsoft.extensions.dependencyinjection.9.0.0.nupkg.sha512",
+    "/Users/ken/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/9.0.0/microsoft.extensions.dependencyinjection.abstractions.9.0.0.nupkg.sha512",
+    "/Users/ken/.nuget/packages/microsoft.extensions.logging/9.0.0/microsoft.extensions.logging.9.0.0.nupkg.sha512",
+    "/Users/ken/.nuget/packages/microsoft.extensions.logging.abstractions/9.0.0/microsoft.extensions.logging.abstractions.9.0.0.nupkg.sha512",
+    "/Users/ken/.nuget/packages/microsoft.extensions.options/9.0.0/microsoft.extensions.options.9.0.0.nupkg.sha512",
+    "/Users/ken/.nuget/packages/microsoft.extensions.primitives/9.0.0/microsoft.extensions.primitives.9.0.0.nupkg.sha512",
+    "/Users/ken/.nuget/packages/oozsharp/2.4.0/oozsharp.2.4.0.nupkg.sha512",
+    "/Users/ken/.nuget/packages/unreal.core/2.4.0/unreal.core.2.4.0.nupkg.sha512",
+    "/Users/ken/.nuget/packages/unreal.encryption/2.4.0/unreal.encryption.2.4.0.nupkg.sha512"
+  ],
+  "logs": []
+}
