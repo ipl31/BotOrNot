@@ -24,4 +24,8 @@
     <ProjectReference Include="..\BotOrNot.Core\BotOrNot.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="TestData\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

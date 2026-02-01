@@ -5,8 +5,10 @@ namespace BotOrNot.Tests;
 [TestFixture]
 public class ReplayServiceTests
 {
-    private const string TestReplayPath =
-        @"C:\Users\ken\AppData\Local\FortniteGame\Saved\Demos\UnsavedReplay-2026.01.31-15.34.27.replay";
+    private static string TestReplayPath => Path.Combine(
+        TestContext.CurrentContext.TestDirectory,
+        "TestData",
+        "UnsavedReplay-2026.01.31-15.34.27.replay");
 
     /// <summary>
     /// Validates elimination counting logic for the recording player.
