@@ -111,18 +111,53 @@ public sealed class ReplayService : IReplayService
         var eliminations = new List<string>();
         var ownerEliminations = new List<PlayerRow>();
 
+        // Track knock and finish states for proper elimination counting
+        // An elimination counts when: you knock someone AND they get finished (by anyone)
+        // Or: you directly eliminate a solo/last-standing player (who can't be knocked)
+        var everKnocked = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var knockedByOwner = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var finishedPlayers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // First pass: identify all knocked players and track who the owner knocked
         foreach (var elim in result.Eliminations ?? Enumerable.Empty<object>())
         {
-            // Get eliminated player info - check both nested object and direct property
+            var isKnock = ReflectionUtils.GetBool(elim, "Knocked");
+            var eliminatedId = ReflectionUtils.FirstString(
+                ReflectionUtils.GetObject(elim, "EliminatedInfo"), "Id")
+                ?? ReflectionUtils.FirstString(elim, "Eliminated")
+                ?? "unknown";
+            var eliminatorId = ReflectionUtils.FirstString(
+                ReflectionUtils.GetObject(elim, "EliminatorInfo"), "Id")
+                ?? ReflectionUtils.FirstString(elim, "Eliminator")
+                ?? "unknown";
+
+            var isOwnerAction = !string.IsNullOrEmpty(ownerId) &&
+                                eliminatorId.Equals(ownerId, StringComparison.OrdinalIgnoreCase);
+
+            if (isKnock)
+            {
+                everKnocked.Add(eliminatedId);
+                if (isOwnerAction)
+                    knockedByOwner.Add(eliminatedId);
+            }
+            else
+            {
+                finishedPlayers.Add(eliminatedId);
+            }
+        }
+
+        // Second pass: build elimination lists (only finishes, not knocks)
+        foreach (var elim in result.Eliminations ?? Enumerable.Empty<object>())
+        {
+            var isKnock = ReflectionUtils.GetBool(elim, "Knocked");
+
+            // Skip knockdowns - only show actual eliminations (finished players)
+            if (isKnock)
+                continue;
+
             var elimInfo = ReflectionUtils.GetObject(elim, "EliminatedInfo");
             var eliminatedId = ReflectionUtils.FirstString(elimInfo, "Id")
                                ?? ReflectionUtils.FirstString(elim, "Eliminated")
-                               ?? "unknown";
-
-            // Get eliminator (killer) info - check both nested object and direct property
-            var eliminatorInfo = ReflectionUtils.GetObject(elim, "EliminatorInfo");
-            var eliminatorId = ReflectionUtils.FirstString(eliminatorInfo, "Id")
-                               ?? ReflectionUtils.FirstString(elim, "Eliminator")
                                ?? "unknown";
 
             var display = playersById.TryGetValue(eliminatedId, out var row)
@@ -130,14 +165,13 @@ public sealed class ReplayService : IReplayService
                 : eliminatedId;
 
             eliminations.Add(display);
+        }
 
-            // Check if this elimination was done by the replay owner
-            var isOwnerKill = !string.IsNullOrEmpty(ownerId) &&
-                              eliminatorId.Equals(ownerId, StringComparison.OrdinalIgnoreCase);
-
-            if (isOwnerKill && playersById.TryGetValue(eliminatedId, out var victim))
+        // Build owner eliminations: knocks by owner that resulted in finish + direct eliminations
+        foreach (var victimId in knockedByOwner.Where(id => finishedPlayers.Contains(id)))
+        {
+            if (playersById.TryGetValue(victimId, out var victim))
             {
-                // Add a copy of the victim's data to owner eliminations
                 ownerEliminations.Add(new PlayerRow
                 {
                     Id = victim.Id,
@@ -150,6 +184,45 @@ public sealed class ReplayService : IReplayService
                     Pickaxe = victim.Pickaxe,
                     Glider = victim.Glider
                 });
+            }
+        }
+
+        // Add direct eliminations by owner (solo/last-standing players who were never knocked)
+        foreach (var elim in result.Eliminations ?? Enumerable.Empty<object>())
+        {
+            var isKnock = ReflectionUtils.GetBool(elim, "Knocked");
+            if (isKnock) continue;
+
+            var eliminatedId = ReflectionUtils.FirstString(
+                ReflectionUtils.GetObject(elim, "EliminatedInfo"), "Id")
+                ?? ReflectionUtils.FirstString(elim, "Eliminated")
+                ?? "unknown";
+            var eliminatorId = ReflectionUtils.FirstString(
+                ReflectionUtils.GetObject(elim, "EliminatorInfo"), "Id")
+                ?? ReflectionUtils.FirstString(elim, "Eliminator")
+                ?? "unknown";
+
+            var isOwnerKill = !string.IsNullOrEmpty(ownerId) &&
+                              eliminatorId.Equals(ownerId, StringComparison.OrdinalIgnoreCase);
+
+            // Direct elimination: owner finished someone who was never knocked
+            if (isOwnerKill && !everKnocked.Contains(eliminatedId))
+            {
+                if (playersById.TryGetValue(eliminatedId, out var victim))
+                {
+                    ownerEliminations.Add(new PlayerRow
+                    {
+                        Id = victim.Id,
+                        Name = victim.Name,
+                        Level = victim.Level,
+                        Bot = victim.Bot,
+                        Platform = victim.Platform,
+                        Kills = victim.Kills,
+                        DeathCause = victim.DeathCause,
+                        Pickaxe = victim.Pickaxe,
+                        Glider = victim.Glider
+                    });
+                }
             }
         }
 
@@ -167,7 +240,7 @@ public sealed class ReplayService : IReplayService
             Version = $"{header?.Major}.{header?.Minor}",
             GameNetProtocol = header?.GameNetworkProtocolVersion.ToString() ?? "",
             PlayerCount = playersById.Count,
-            EliminationCount = result.Eliminations?.Count ?? 0,
+            EliminationCount = eliminations.Count,
             GameMode = gameMode,
             Playlist = playlist,
             MaxPlayers = maxPlayers,
