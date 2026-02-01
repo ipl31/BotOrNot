@@ -52,4 +52,24 @@ public class ReplayServiceTests
         Assert.That(result.Eliminations.Count, Is.GreaterThan(0),
             "Should have some eliminations");
     }
+
+    [Test]
+    public async Task FancyPumpkin87_ShouldHaveDeathCauseOfSMG()
+    {
+        // Arrange
+        var service = new ReplayService();
+
+        // Act
+        var result = await service.LoadReplayAsync(TestReplayPath);
+
+        // Assert - find FancyPumpkin87 in owner eliminations and verify death cause
+        var victim = result.OwnerEliminations.FirstOrDefault(p =>
+            p.Name?.Equals("FancyPumpkin87", StringComparison.OrdinalIgnoreCase) == true);
+
+        Assert.That(victim, Is.Not.Null,
+            "FancyPumpkin87 should be in the owner's eliminations");
+
+        Assert.That(victim!.DeathCause, Does.StartWith("SMG"),
+            $"FancyPumpkin87's death cause should be SMG, but was {victim.DeathCause}");
+    }
 }
