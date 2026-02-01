@@ -59,7 +59,9 @@ public sealed class ReplayService : IReplayService
             row.Bot = string.IsNullOrWhiteSpace(bot) ? (row.Bot ?? "unknown") : bot;
             row.Platform = platform ?? row.Platform;
             row.Kills = string.IsNullOrWhiteSpace(kills) ? (row.Kills ?? "unknown") : kills;
-            row.DeathCause = string.IsNullOrWhiteSpace(death) ? (row.DeathCause ?? "unknown") : death;
+            row.DeathCause = string.IsNullOrWhiteSpace(death)
+                ? (row.DeathCause ?? "Unknown")
+                : DeathCauseHelper.GetDisplayName(death);
             row.Pickaxe = pickaxe;
             row.Glider = glider;
         }
