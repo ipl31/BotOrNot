@@ -72,4 +72,71 @@ public class ReplayServiceTests
         Assert.That(victim!.DeathCause, Does.StartWith("SMG"),
             $"FancyPumpkin87's death cause should be SMG, but was {victim.DeathCause}");
     }
+
+    [Test]
+    public async Task WinningTeam_ShouldBeExtracted()
+    {
+        // Arrange
+        var service = new ReplayService();
+
+        // Act
+        var result = await service.LoadReplayAsync(TestReplayPath);
+
+        // Assert - winning team should be team 10
+        Assert.That(result.Metadata.WinningTeam, Is.EqualTo(10),
+            "Winning team should be team 10");
+
+        Assert.That(result.Metadata.WinningPlayerNames, Has.Count.EqualTo(3),
+            "Winning team should have 3 players");
+
+        Assert.That(result.Metadata.WinningPlayerNames, Does.Contain("ModPackDad"),
+            "ModPackDad should be one of the winning players");
+    }
+
+    [Test]
+    public async Task WinningPlayers_ShouldHavePlacement1()
+    {
+        // Arrange
+        var service = new ReplayService();
+
+        // Act
+        var result = await service.LoadReplayAsync(TestReplayPath);
+
+        // Assert - find winning team players and verify placement
+        var modPackDad = result.Players.FirstOrDefault(p =>
+            p.Name?.Equals("ModPackDad", StringComparison.OrdinalIgnoreCase) == true);
+
+        Assert.That(modPackDad, Is.Not.Null,
+            "ModPackDad should be in the players list");
+
+        Assert.That(modPackDad!.Placement, Is.EqualTo("1"),
+            $"ModPackDad's placement should be 1, but was {modPackDad.Placement}");
+
+        Assert.That(modPackDad.IsWinner, Is.True,
+            "ModPackDad should be marked as winner");
+
+        // All team 10 players should have placement 1
+        var team10Players = result.Players.Where(p => p.TeamIndex == "10").ToList();
+        Assert.That(team10Players.All(p => p.Placement == "1"), Is.True,
+            "All team 10 players should have placement 1");
+    }
+
+    [Test]
+    public async Task TeamKills_ShouldBeExtracted()
+    {
+        // Arrange
+        var service = new ReplayService();
+
+        // Act
+        var result = await service.LoadReplayAsync(TestReplayPath);
+
+        // Assert - team 10 should have 20 team kills
+        var team10Player = result.Players.FirstOrDefault(p => p.TeamIndex == "10");
+
+        Assert.That(team10Player, Is.Not.Null,
+            "Should have players from team 10");
+
+        Assert.That(team10Player!.TeamKills, Is.EqualTo("20"),
+            $"Team 10 should have 20 team kills, but had {team10Player.TeamKills}");
+    }
 }

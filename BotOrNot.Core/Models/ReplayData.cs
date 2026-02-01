@@ -20,4 +20,7 @@ public sealed class ReplayMetadata
     public string Playlist { get; set; } = "";
     public int? MaxPlayers { get; set; }
     public double MatchDurationMinutes { get; set; }
+    public int? WinningTeam { get; set; }
+    public List<string> WinningPlayerIds { get; set; } = new();
+    public List<string> WinningPlayerNames { get; set; } = new();
 }

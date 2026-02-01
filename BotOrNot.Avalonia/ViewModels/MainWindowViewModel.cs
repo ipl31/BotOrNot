@@ -113,9 +113,18 @@ public class MainWindowViewModel : ReactiveObject
             var npcPrefix = npcCount > 0 ? $"NPCs Seen ({npcCount}) | " : "";
             PlayersSeenHeader = $"{npcPrefix}Players Seen ({totalPlayers}) - {humanPlayers} Players, {botPlayers} Bots{platformBreakdown}";
 
+            // Find owner's placement
+            var ownerPlayer = data.Players.FirstOrDefault(p =>
+                !string.IsNullOrEmpty(data.OwnerName) &&
+                p.Name?.Equals(data.OwnerName, StringComparison.OrdinalIgnoreCase) == true);
+            var ownerPlacement = ownerPlayer?.Placement;
+            var placementText = !string.IsNullOrEmpty(ownerPlacement)
+                ? $"Placement: #{ownerPlacement}"
+                : "Placement: Unknown";
+
             MetadataText = $"File: {data.Metadata.FileName}\n" +
                           $"Mode: {data.Metadata.GameMode}\n" +
-                          $"Duration: {data.Metadata.MatchDurationMinutes:F1} minutes\n" +
+                          $"Duration: {data.Metadata.MatchDurationMinutes:F1} minutes | {placementText}\n" +
                           $"Players: {data.Metadata.PlayerCount}" + (data.Metadata.MaxPlayers.HasValue ? $" (Max: {data.Metadata.MaxPlayers})" : "") + "\n" +
                           $"Eliminations (in replay): {data.Metadata.EliminationCount}";
         }

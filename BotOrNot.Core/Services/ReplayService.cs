@@ -40,6 +40,7 @@ public sealed class ReplayService : IReplayService
             var kills = ReflectionUtils.FirstString(pd, "Kills");
             var teamIndex = ReflectionUtils.FirstString(pd, "TeamIndex");
             var death = ReflectionUtils.FirstString(pd, "DeathCause");
+            var placement = ReflectionUtils.FirstString(pd, "Placement");
 
             var cosmetics = ReflectionUtils.GetObject(pd, "Cosmetics");
             var pickaxe = ReflectionUtils.FirstString(cosmetics, "Pickaxe") ?? "unknown";
@@ -64,8 +65,96 @@ public sealed class ReplayService : IReplayService
             row.DeathCause = string.IsNullOrWhiteSpace(death)
                 ? (row.DeathCause ?? "Unknown")
                 : DeathCauseHelper.GetDisplayName(death);
+            row.Placement = string.IsNullOrWhiteSpace(placement) ? null : placement;
             row.Pickaxe = pickaxe;
             row.Glider = glider;
+        }
+
+        // Build team data lookup for TeamKills and team placement
+        var teamKillsByIndex = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var teamPlacementByIndex = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var team in result.TeamData ?? Enumerable.Empty<object>())
+        {
+            var teamIdx = ReflectionUtils.FirstString(team, "TeamIndex");
+            var teamKills = ReflectionUtils.FirstString(team, "TeamKills");
+            var teamPlacement = ReflectionUtils.FirstString(team, "Placement");
+
+            if (!string.IsNullOrWhiteSpace(teamIdx))
+            {
+                if (!string.IsNullOrWhiteSpace(teamKills))
+                    teamKillsByIndex[teamIdx] = teamKills;
+                if (!string.IsNullOrWhiteSpace(teamPlacement))
+                    teamPlacementByIndex[teamIdx] = teamPlacement;
+            }
+        }
+
+        // Apply team kills and placement to players
+        foreach (var row in playersById.Values)
+        {
+            if (!string.IsNullOrWhiteSpace(row.TeamIndex))
+            {
+                if (teamKillsByIndex.TryGetValue(row.TeamIndex, out var teamKills))
+                    row.TeamKills = teamKills;
+                // If player doesn't have placement but team does, use team placement
+                if (string.IsNullOrWhiteSpace(row.Placement) && teamPlacementByIndex.TryGetValue(row.TeamIndex, out var teamPlacement))
+                    row.Placement = teamPlacement;
+            }
+        }
+
+        // Build a lookup by numeric Id for winning player resolution
+        var playersByNumericId = new Dictionary<string, PlayerRow>(StringComparer.OrdinalIgnoreCase);
+        foreach (var pd in result.PlayerData ?? Enumerable.Empty<object>())
+        {
+            var numericId = ReflectionUtils.FirstString(pd, "Id");
+            var playerId = ReflectionUtils.FirstString(pd, "PlayerId", "UniqueId", "NetId");
+
+            if (!string.IsNullOrWhiteSpace(numericId) && !string.IsNullOrWhiteSpace(playerId))
+            {
+                if (playersById.TryGetValue(playerId, out var row))
+                    playersByNumericId[numericId] = row;
+            }
+        }
+
+        // Extract winning team info from GameData
+        int? winningTeam = null;
+        var winningPlayerIds = new List<string>();
+        var winningPlayerNames = new List<string>();
+
+        if (result.GameData != null)
+        {
+            var winTeamObj = ReflectionUtils.GetObject(result.GameData, "WinningTeam");
+            if (winTeamObj is int wt)
+                winningTeam = wt;
+            else if (int.TryParse(winTeamObj?.ToString(), out var parsed))
+                winningTeam = parsed;
+
+            var winIds = ReflectionUtils.GetObject(result.GameData, "WinningPlayerIds");
+            if (winIds is System.Collections.IEnumerable enumerable)
+            {
+                foreach (var id in enumerable)
+                {
+                    var idStr = id?.ToString();
+                    if (!string.IsNullOrWhiteSpace(idStr))
+                    {
+                        winningPlayerIds.Add(idStr);
+                        // Look up player name by numeric Id
+                        if (playersByNumericId.TryGetValue(idStr, out var player) && !string.IsNullOrWhiteSpace(player.Name))
+                            winningPlayerNames.Add(player.Name);
+                    }
+                }
+            }
+        }
+
+        // Mark winning team players with placement if they don't have it
+        if (winningTeam.HasValue)
+        {
+            var winTeamStr = winningTeam.Value.ToString();
+            foreach (var row in playersById.Values)
+            {
+                if (row.TeamIndex == winTeamStr && string.IsNullOrWhiteSpace(row.Placement))
+                    row.Placement = "1";
+            }
         }
 
         // Find replay owner from PlayerData by checking IsReplayOwner property
@@ -250,7 +339,10 @@ public sealed class ReplayService : IReplayService
             GameMode = gameMode,
             Playlist = playlist,
             MaxPlayers = maxPlayers,
-            MatchDurationMinutes = matchDuration
+            MatchDurationMinutes = matchDuration,
+            WinningTeam = winningTeam,
+            WinningPlayerIds = winningPlayerIds,
+            WinningPlayerNames = winningPlayerNames
         };
 
         return new ReplayData

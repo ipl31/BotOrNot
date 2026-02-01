@@ -98,6 +98,7 @@
                 <DataGridTextColumn Header="Platform" Binding="{Binding Platform, Converter={StaticResource PlatformNameConverter}}" Width="130" />
                 <DataGridTextColumn Header="Kills" Binding="{Binding Kills}" Width="91" />
                 <DataGridTextColumn Header="Squad" Binding="{Binding TeamIndex}" Width="70" />
+                <DataGridTextColumn Header="Placement" Binding="{Binding Placement}" Width="90" />
                 <DataGridTextColumn Header="Death Cause" Binding="{Binding DeathCause}" Width="156" />
                 <DataGridTextColumn Header="Pickaxe" Binding="{Binding Pickaxe}" Width="195" IsVisible="False" />
                 <DataGridTextColumn Header="Glider" Binding="{Binding Glider}" Width="195" IsVisible="False" />
@@ -141,6 +142,7 @@
                 <DataGridTextColumn Header="Platform" Binding="{Binding Platform, Converter={StaticResource PlatformNameConverter}}" Width="130" />
                 <DataGridTextColumn Header="Kills" Binding="{Binding Kills}" Width="91" />
                 <DataGridTextColumn Header="Squad" Binding="{Binding TeamIndex}" Width="70" />
+                <DataGridTextColumn Header="Placement" Binding="{Binding Placement}" Width="90" />
                 <DataGridTextColumn Header="Death Cause" Binding="{Binding DeathCause}" Width="156" />
                 <DataGridTextColumn Header="Pickaxe" Binding="{Binding Pickaxe}" Width="195" IsVisible="False" />
                 <DataGridTextColumn Header="Glider" Binding="{Binding Glider}" Width="195" IsVisible="False" />

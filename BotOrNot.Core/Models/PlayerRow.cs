@@ -8,12 +8,15 @@ public sealed class PlayerRow
     public string? Bot { get; set; }
     public string? Platform { get; set; }
     public string? Kills { get; set; }
+    public string? TeamKills { get; set; }
     public string? TeamIndex { get; set; }
     public string? DeathCause { get; set; }
+    public string? Placement { get; set; }
     public string? Pickaxe { get; set; }
     public string? Glider { get; set; }
 
     public bool IsBot => !string.IsNullOrEmpty(Bot) && Bot.Equals("true", StringComparison.OrdinalIgnoreCase);
+    public bool IsWinner => Placement == "1";
 
     /// <summary>
     /// NPCs have their Player ID equal to their Player Name.
