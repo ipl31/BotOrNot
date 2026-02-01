@@ -8,9 +8,17 @@ public sealed class PlayerRow
     public string? Bot { get; set; }
     public string? Platform { get; set; }
     public string? Kills { get; set; }
+    public string? TeamIndex { get; set; }
     public string? DeathCause { get; set; }
     public string? Pickaxe { get; set; }
     public string? Glider { get; set; }
 
     public bool IsBot => !string.IsNullOrEmpty(Bot) && Bot.Equals("true", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// NPCs have their Player ID equal to their Player Name.
+    /// AI players and real players have unique IDs.
+    /// </summary>
+    public bool IsNpc => !string.IsNullOrEmpty(Id) && !string.IsNullOrEmpty(Name) &&
+                         Id.Equals(Name, StringComparison.OrdinalIgnoreCase);
 }

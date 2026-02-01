@@ -38,6 +38,7 @@ public sealed class ReplayService : IReplayService
             var bot = ReflectionUtils.FirstString(pd, "IsBot");
             var platform = ReflectionUtils.FirstString(pd, "Platform");
             var kills = ReflectionUtils.FirstString(pd, "Kills");
+            var teamIndex = ReflectionUtils.FirstString(pd, "TeamIndex");
             var death = ReflectionUtils.FirstString(pd, "DeathCause");
 
             var cosmetics = ReflectionUtils.GetObject(pd, "Cosmetics");
@@ -59,6 +60,7 @@ public sealed class ReplayService : IReplayService
             row.Bot = string.IsNullOrWhiteSpace(bot) ? (row.Bot ?? "unknown") : bot;
             row.Platform = platform ?? row.Platform;
             row.Kills = string.IsNullOrWhiteSpace(kills) ? (row.Kills ?? "unknown") : kills;
+            row.TeamIndex = string.IsNullOrWhiteSpace(teamIndex) ? (row.TeamIndex ?? "unknown") : teamIndex;
             row.DeathCause = string.IsNullOrWhiteSpace(death)
                 ? (row.DeathCause ?? "Unknown")
                 : DeathCauseHelper.GetDisplayName(death);
@@ -182,6 +184,7 @@ public sealed class ReplayService : IReplayService
                     Bot = victim.Bot,
                     Platform = victim.Platform,
                     Kills = victim.Kills,
+                    TeamIndex = victim.TeamIndex,
                     DeathCause = victim.DeathCause,
                     Pickaxe = victim.Pickaxe,
                     Glider = victim.Glider
@@ -220,6 +223,7 @@ public sealed class ReplayService : IReplayService
                         Bot = victim.Bot,
                         Platform = victim.Platform,
                         Kills = victim.Kills,
+                        TeamIndex = victim.TeamIndex,
                         DeathCause = victim.DeathCause,
                         Pickaxe = victim.Pickaxe,
                         Glider = victim.Glider
@@ -241,7 +245,7 @@ public sealed class ReplayService : IReplayService
             FileName = Path.GetFileName(path),
             Version = $"{header?.Major}.{header?.Minor}",
             GameNetProtocol = header?.GameNetworkProtocolVersion.ToString() ?? "",
-            PlayerCount = playersById.Count,
+            PlayerCount = playersById.Values.Count(p => !p.IsNpc),
             EliminationCount = eliminations.Count,
             GameMode = gameMode,
             Playlist = playlist,

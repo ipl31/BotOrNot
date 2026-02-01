@@ -88,17 +88,21 @@ public class MainWindowViewModel : ReactiveObject
             OwnerEliminations = new ObservableCollection<PlayerRow>(data.OwnerEliminations);
 
             var ownerDisplay = !string.IsNullOrEmpty(data.OwnerName) ? data.OwnerName : "Your";
-            var botKills = data.OwnerEliminations.Count(p => p.Bot?.Equals("true", StringComparison.OrdinalIgnoreCase) == true);
-            var playerKills = data.OwnerEliminations.Count - botKills;
-            OwnerKillsHeader = $"{ownerDisplay}'s Eliminations ({data.OwnerEliminations.Count}) - {playerKills} Players, {botKills} Bots";
+            // Exclude NPCs from elimination counts
+            var nonNpcEliminations = data.OwnerEliminations.Where(p => !p.IsNpc).ToList();
+            var botKills = nonNpcEliminations.Count(p => p.IsBot);
+            var playerKills = nonNpcEliminations.Count - botKills;
+            OwnerKillsHeader = $"{ownerDisplay}'s Eliminations ({nonNpcEliminations.Count}) - {playerKills} Players, {botKills} Bots";
 
-            // Build Players Seen header with breakdown
-            var totalPlayers = data.Players.Count;
-            var botPlayers = data.Players.Count(p => p.Bot?.Equals("true", StringComparison.OrdinalIgnoreCase) == true);
+            // Build Players Seen header with breakdown (excluding NPCs)
+            var npcCount = data.Players.Count(p => p.IsNpc);
+            var nonNpcPlayers = data.Players.Where(p => !p.IsNpc).ToList();
+            var totalPlayers = nonNpcPlayers.Count;
+            var botPlayers = nonNpcPlayers.Count(p => p.IsBot);
             var humanPlayers = totalPlayers - botPlayers;
 
-            // Group by platform (using friendly names) and build platform breakdown string
-            var platformGroups = data.Players
+            // Group by platform (using friendly names) and build platform breakdown string (excluding NPCs)
+            var platformGroups = nonNpcPlayers
                 .Where(p => !string.IsNullOrWhiteSpace(p.Platform))
                 .GroupBy(p => PlatformHelper.GetFriendlyName(p.Platform))
                 .OrderByDescending(g => g.Count())
@@ -106,7 +110,8 @@ public class MainWindowViewModel : ReactiveObject
                 .ToList();
 
             var platformBreakdown = platformGroups.Count > 0 ? " | " + string.Join(", ", platformGroups) : "";
-            PlayersSeenHeader = $"Players Seen ({totalPlayers}) - {humanPlayers} Players, {botPlayers} Bots{platformBreakdown}";
+            var npcPrefix = npcCount > 0 ? $"NPCs Seen ({npcCount}) | " : "";
+            PlayersSeenHeader = $"{npcPrefix}Players Seen ({totalPlayers}) - {humanPlayers} Players, {botPlayers} Bots{platformBreakdown}";
 
             MetadataText = $"File: {data.Metadata.FileName}\n" +
                           $"Mode: {data.Metadata.GameMode}\n" +
