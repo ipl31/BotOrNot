@@ -3,6 +3,52 @@ using BotOrNot.Core.Services;
 namespace BotOrNot.Tests;
 
 [TestFixture]
+public class PlaylistHelperTests
+{
+    [TestCase("Playlist_NoBuildBR_Solo", "BR Zero Build - Solo")]
+    [TestCase("Playlist_NoBuildBR_Duo", "BR Zero Build - Duos")]
+    [TestCase("Playlist_NoBuildBR_Trio", "BR Zero Build - Trios")]
+    [TestCase("Playlist_NoBuildBR_Squad", "BR Zero Build - Squads")]
+    [TestCase("Playlist_DefaultSolo", "BR - Solo")]
+    [TestCase("Playlist_DefaultDuo", "BR - Duos")]
+    [TestCase("playlist_trios", "BR - Trios")]
+    [TestCase("Playlist_DefaultSquad", "BR - Squads")]
+    [TestCase("Playlist_Respawn_24_Alt", "Team Rumble")]
+    public void GetDisplayName_ReturnsCorrectMapping(string playlist, string expectedDisplay)
+    {
+        var result = PlaylistHelper.GetDisplayName(playlist);
+        Assert.That(result, Is.EqualTo(expectedDisplay));
+    }
+
+    [Test]
+    public void GetDisplayName_IsCaseInsensitive()
+    {
+        var lower = PlaylistHelper.GetDisplayName("playlist_nobuildBR_solo");
+        var upper = PlaylistHelper.GetDisplayName("PLAYLIST_NOBUILDGBR_SOLO");
+        var mixed = PlaylistHelper.GetDisplayName("Playlist_NoBuildBR_Solo");
+
+        Assert.That(lower, Is.EqualTo("BR Zero Build - Solo"));
+        Assert.That(mixed, Is.EqualTo("BR Zero Build - Solo"));
+    }
+
+    [Test]
+    public void GetDisplayName_ReturnsNullForUnknown()
+    {
+        var result = PlaylistHelper.GetDisplayName("Unknown_Playlist_Name");
+        Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public void GetDisplayNameWithFallback_UsesPatternForUnknown()
+    {
+        // Unknown playlist with recognizable pattern
+        var result = PlaylistHelper.GetDisplayNameWithFallback("Playlist_NewMode_NoBuild_Squad");
+        Assert.That(result, Does.Contain("Zero Build"));
+        Assert.That(result, Does.Contain("Squads"));
+    }
+}
+
+[TestFixture]
 public class ReplayServiceTests
 {
     private static string TestReplayPath => Path.Combine(

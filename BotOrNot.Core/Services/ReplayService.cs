@@ -160,6 +160,7 @@ public sealed class ReplayService : IReplayService
         // Find replay owner from PlayerData by checking IsReplayOwner property
         string? ownerId = null;
         string? ownerName = null;
+        int? ownerKills = null;
 
         foreach (var pd in result.PlayerData ?? Enumerable.Empty<object>())
         {
@@ -167,6 +168,9 @@ public sealed class ReplayService : IReplayService
             {
                 ownerId = ReflectionUtils.FirstString(pd, "PlayerId", "EpicId", "Id");
                 ownerName = ReflectionUtils.FirstString(pd, "PlayerName", "DisplayName", "Name");
+                var killsStr = ReflectionUtils.FirstString(pd, "Kills");
+                if (int.TryParse(killsStr, out var kills))
+                    ownerKills = kills;
                 break;
             }
         }
@@ -198,6 +202,9 @@ public sealed class ReplayService : IReplayService
             {
                 ownerId = ReflectionUtils.FirstString(likelyOwner, "PlayerId", "EpicId", "Id");
                 ownerName = ReflectionUtils.FirstString(likelyOwner, "PlayerName", "DisplayName", "Name");
+                var killsStr = ReflectionUtils.FirstString(likelyOwner, "Kills");
+                if (int.TryParse(killsStr, out var kills))
+                    ownerKills = kills;
             }
         }
 
@@ -323,9 +330,9 @@ public sealed class ReplayService : IReplayService
 
         var header = result.Header;
 
-        // Parse game mode from GameSpecificData and CurrentPlaylist
-        var gameMode = ParseGameMode(header?.GameSpecificData, result.GameData?.CurrentPlaylist);
+        // Get game mode display name from playlist mapping
         var playlist = result.GameData?.CurrentPlaylist ?? "";
+        var gameMode = PlaylistHelper.GetDisplayNameWithFallback(playlist);
         var maxPlayers = result.GameData?.MaxPlayers;
         var matchDuration = (result.Info?.LengthInMs ?? 0) / 1000.0 / 60.0;
 
@@ -351,87 +358,9 @@ public sealed class ReplayService : IReplayService
             Eliminations = eliminations,
             OwnerEliminations = ownerEliminations,
             OwnerName = ownerName,
+            OwnerKills = ownerKills,
             Metadata = metadata
         };
     }
 
-    private static string ParseGameMode(IEnumerable<string>? gameSpecificData, string? playlist)
-    {
-        var parts = new List<string>();
-
-        // Parse VerseURI from GameSpecificData for base mode
-        string? verseUri = null;
-        if (gameSpecificData != null)
-        {
-            foreach (var item in gameSpecificData)
-            {
-                if (item.StartsWith("VerseURI="))
-                {
-                    verseUri = item.Substring(9);
-                    break;
-                }
-            }
-        }
-
-        // Determine base game mode from VerseURI first
-        bool baseModeDetected = false;
-        if (!string.IsNullOrEmpty(verseUri))
-        {
-            if (verseUri.Contains("BlitzRoot", StringComparison.OrdinalIgnoreCase))
-            {
-                parts.Add("Blitz");
-                baseModeDetected = true;
-            }
-            else if (verseUri.Contains("ReloadRoot", StringComparison.OrdinalIgnoreCase))
-            {
-                parts.Add("Reload");
-                baseModeDetected = true;
-            }
-            else if (verseUri.Contains("BRRoot", StringComparison.OrdinalIgnoreCase))
-            {
-                parts.Add("Battle Royale");
-                baseModeDetected = true;
-            }
-            else if (verseUri.Contains("Ranked", StringComparison.OrdinalIgnoreCase))
-            {
-                parts.Add("Ranked");
-                baseModeDetected = true;
-            }
-        }
-
-        // Parse playlist for additional details and fallback base mode detection
-        if (!string.IsNullOrEmpty(playlist))
-        {
-            // Fallback: detect base mode from playlist codenames if not found in VerseURI
-            if (!baseModeDetected)
-            {
-                // Reload uses codename "Sunflower"
-                if (playlist.Contains("Sunflower", StringComparison.OrdinalIgnoreCase))
-                    parts.Add("Reload");
-                // Blitz uses codenames like "ForbiddenFruit"
-                else if (playlist.Contains("ForbiddenFruit", StringComparison.OrdinalIgnoreCase))
-                    parts.Add("Blitz");
-            }
-
-            // Check for Zero Build
-            if (playlist.Contains("NoBuild", StringComparison.OrdinalIgnoreCase))
-                parts.Add("Zero Build");
-
-            // Check for team size
-            if (playlist.Contains("Solo", StringComparison.OrdinalIgnoreCase))
-                parts.Add("Solo");
-            else if (playlist.Contains("Duo", StringComparison.OrdinalIgnoreCase))
-                parts.Add("Duos");
-            else if (playlist.Contains("Trio", StringComparison.OrdinalIgnoreCase))
-                parts.Add("Trios");
-            else if (playlist.Contains("Squad", StringComparison.OrdinalIgnoreCase))
-                parts.Add("Squads");
-        }
-
-        // Fallback if nothing detected
-        if (parts.Count == 0)
-            return "Unknown";
-
-        return string.Join(" ", parts);
-    }
 }

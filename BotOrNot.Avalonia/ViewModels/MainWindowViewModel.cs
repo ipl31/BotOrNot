@@ -88,11 +88,17 @@ public class MainWindowViewModel : ReactiveObject
             OwnerEliminations = new ObservableCollection<PlayerRow>(data.OwnerEliminations);
 
             var ownerDisplay = !string.IsNullOrEmpty(data.OwnerName) ? data.OwnerName : "Your";
-            // Exclude NPCs from elimination counts
+            // Use authoritative kill count from PlayerData, fall back to event-based count
             var nonNpcEliminations = data.OwnerEliminations.Where(p => !p.IsNpc).ToList();
+            var totalKills = data.OwnerKills ?? nonNpcEliminations.Count;
             var botKills = nonNpcEliminations.Count(p => p.IsBot);
-            var playerKills = nonNpcEliminations.Count - botKills;
-            OwnerKillsHeader = $"{ownerDisplay}'s Eliminations ({nonNpcEliminations.Count}) - {playerKills} Players, {botKills} Bots";
+            // Unidentified kills (respawn token kills) are assumed to be real players
+            var unidentifiedKills = totalKills - nonNpcEliminations.Count;
+            var playerKills = nonNpcEliminations.Count - botKills + unidentifiedKills;
+            var unidentifiedNote = unidentifiedKills > 0
+                ? $" | {unidentifiedKills} unidentifiable due to respawn token"
+                : "";
+            OwnerKillsHeader = $"{ownerDisplay}'s Eliminations ({totalKills}) - {playerKills} Players, {botKills} Bots{unidentifiedNote}";
 
             // Build Players Seen header with breakdown (excluding NPCs)
             var npcCount = data.Players.Count(p => p.IsNpc);
