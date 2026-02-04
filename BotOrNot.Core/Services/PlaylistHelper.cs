@@ -73,7 +73,7 @@ public static class PlaylistHelper
     }
 
     /// <summary>
-    /// Gets the display name for a playlist, or falls back to pattern-based detection.
+    /// Gets the display name for a playlist, or returns the raw playlist string if no mapping exists.
     /// </summary>
     public static string GetDisplayNameWithFallback(string? playlistName)
     {
@@ -82,46 +82,7 @@ public static class PlaylistHelper
         if (displayName != null)
             return displayName;
 
-        // Fallback to pattern-based detection
-        return ParsePlaylistFallback(playlistName);
-    }
-
-    private static string ParsePlaylistFallback(string? playlist)
-    {
-        if (string.IsNullOrEmpty(playlist))
-            return "Unknown";
-
-        var parts = new List<string>();
-
-        // Detect base mode
-        if (playlist.Contains("Sunflower", StringComparison.OrdinalIgnoreCase))
-            parts.Add("Reload");
-        else if (playlist.Contains("ForbiddenFruit", StringComparison.OrdinalIgnoreCase) ||
-                 playlist.Contains("Blitz", StringComparison.OrdinalIgnoreCase))
-            parts.Add("Blitz");
-        else if (playlist.Contains("Ranked", StringComparison.OrdinalIgnoreCase) ||
-                 playlist.Contains("Comp_", StringComparison.OrdinalIgnoreCase))
-            parts.Add("Ranked");
-        else if (playlist.Contains("Creative", StringComparison.OrdinalIgnoreCase))
-            parts.Add("Creative");
-
-        // Check for Zero Build
-        if (playlist.Contains("NoBuild", StringComparison.OrdinalIgnoreCase))
-            parts.Add("Zero Build");
-
-        // Check for team size
-        if (playlist.Contains("Solo", StringComparison.OrdinalIgnoreCase))
-            parts.Add("Solo");
-        else if (playlist.Contains("Duo", StringComparison.OrdinalIgnoreCase))
-            parts.Add("Duos");
-        else if (playlist.Contains("Trio", StringComparison.OrdinalIgnoreCase))
-            parts.Add("Trios");
-        else if (playlist.Contains("Squad", StringComparison.OrdinalIgnoreCase))
-            parts.Add("Squads");
-
-        if (parts.Count == 0)
-            return playlist; // Return raw name if nothing detected
-
-        return string.Join(" - ", parts);
+        // Return raw playlist name if no mapping found
+        return playlistName ?? "Unknown";
     }
 }

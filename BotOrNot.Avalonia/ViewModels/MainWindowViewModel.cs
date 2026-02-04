@@ -130,6 +130,7 @@ public class MainWindowViewModel : ReactiveObject
 
             MetadataText = $"File: {data.Metadata.FileName}\n" +
                           $"Mode: {data.Metadata.GameMode}\n" +
+                          $"Playlist Name: {data.Metadata.Playlist}\n" +
                           $"Duration: {data.Metadata.MatchDurationMinutes:F1} minutes | {placementText}\n" +
                           $"Players: {data.Metadata.PlayerCount}" + (data.Metadata.MaxPlayers.HasValue ? $" (Max: {data.Metadata.MaxPlayers})" : "") + "\n" +
                           $"Eliminations (in replay): {data.Metadata.EliminationCount}";
