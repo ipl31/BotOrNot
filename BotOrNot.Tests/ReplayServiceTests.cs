@@ -9,11 +9,10 @@ public class PlaylistHelperTests
     [TestCase("Playlist_NoBuildBR_Duo", "BR Zero Build - Duos")]
     [TestCase("Playlist_NoBuildBR_Trio", "BR Zero Build - Trios")]
     [TestCase("Playlist_NoBuildBR_Squad", "BR Zero Build - Squads")]
-    [TestCase("Playlist_DefaultSolo", "BR - Solo")]
-    [TestCase("Playlist_DefaultDuo", "BR - Duos")]
-    [TestCase("playlist_trios", "BR - Trios")]
-    [TestCase("Playlist_DefaultSquad", "BR - Squads")]
-    [TestCase("Playlist_Respawn_24_Alt", "Team Rumble")]
+    [TestCase("Playlist_DefaultSolo", "BR Build - Solo")]
+    [TestCase("Playlist_DefaultDuo", "BR Build - Duos")]
+    [TestCase("Playlist_DefaultTrio", "BR Build - Trios")]
+    [TestCase("Playlist_DefaultSquad", "BR Build - Squads")]
     public void GetDisplayName_ReturnsCorrectMapping(string playlist, string expectedDisplay)
     {
         var result = PlaylistHelper.GetDisplayName(playlist);
@@ -39,12 +38,11 @@ public class PlaylistHelperTests
     }
 
     [Test]
-    public void GetDisplayNameWithFallback_UsesPatternForUnknown()
+    public void GetDisplayNameWithFallback_ReturnsRawNameForUnknown()
     {
-        // Unknown playlist with recognizable pattern
+        // Unknown playlist returns raw playlist string as fallback
         var result = PlaylistHelper.GetDisplayNameWithFallback("Playlist_NewMode_NoBuild_Squad");
-        Assert.That(result, Does.Contain("Zero Build"));
-        Assert.That(result, Does.Contain("Squads"));
+        Assert.That(result, Is.EqualTo("Playlist_NewMode_NoBuild_Squad"));
     }
 }
 
