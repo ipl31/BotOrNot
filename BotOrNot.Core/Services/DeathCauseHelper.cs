@@ -2,6 +2,11 @@ namespace BotOrNot.Core.Services;
 
 public static class DeathCauseHelper
 {
+    private static readonly Dictionary<string, string> WeaponTagMappings = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "Area51Gun", "Arc Gun" }
+    };
+
     private static readonly Dictionary<int, string> DeathCauses = new()
     {
         { 0, "Storm" },
@@ -68,10 +73,45 @@ public static class DeathCauseHelper
         if (string.IsNullOrWhiteSpace(deathCauseValue))
             return "Unknown";
 
-        if (int.TryParse(deathCauseValue, out var code) && DeathCauses.TryGetValue(code, out var name))
-            return $"{name} ({code})";
+        if (int.TryParse(deathCauseValue, out var code))
+        {
+            if (DeathCauses.TryGetValue(code, out var name))
+                return $"{name} ({code})";
+
+            // Known integer but not in our mapping
+            return $"Unknown ({code})";
+        }
 
         // Return original value if not a recognized integer code
         return deathCauseValue;
+    }
+
+    /// <summary>
+    /// Converts a death cause code to a human-readable string, falling back to death tags
+    /// when the numeric code is null or missing.
+    /// </summary>
+    public static string GetDisplayName(string? deathCauseValue, IEnumerable<string>? deathTags)
+    {
+        // Try numeric code resolution first
+        if (!string.IsNullOrWhiteSpace(deathCauseValue))
+            return GetDisplayName(deathCauseValue);
+
+        // Fall back to death tag resolution
+        if (deathTags != null)
+        {
+            foreach (var tag in deathTags)
+            {
+                if (tag.StartsWith("Item.Weapon.", StringComparison.OrdinalIgnoreCase))
+                {
+                    foreach (var (key, displayName) in WeaponTagMappings)
+                    {
+                        if (tag.Contains(key, StringComparison.OrdinalIgnoreCase))
+                            return displayName;
+                    }
+                }
+            }
+        }
+
+        return "Unknown";
     }
 }

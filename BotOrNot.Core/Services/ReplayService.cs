@@ -40,6 +40,12 @@ public sealed class ReplayService : IReplayService
             var kills = ReflectionUtils.FirstString(pd, "Kills");
             var teamIndex = ReflectionUtils.FirstString(pd, "TeamIndex");
             var death = ReflectionUtils.FirstString(pd, "DeathCause");
+            var deathTagsObj = ReflectionUtils.GetObject(pd, "DeathTags");
+            var deathTagStrings = (deathTagsObj as System.Collections.IEnumerable)?
+                .Cast<object>()
+                .Select(t => t.ToString()!)
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .ToList();
             var placement = ReflectionUtils.FirstString(pd, "Placement");
 
             var cosmetics = ReflectionUtils.GetObject(pd, "Cosmetics");
@@ -62,9 +68,9 @@ public sealed class ReplayService : IReplayService
             row.Platform = platform ?? row.Platform;
             row.Kills = string.IsNullOrWhiteSpace(kills) ? (row.Kills ?? "unknown") : kills;
             row.TeamIndex = string.IsNullOrWhiteSpace(teamIndex) ? (row.TeamIndex ?? "unknown") : teamIndex;
-            row.DeathCause = string.IsNullOrWhiteSpace(death)
-                ? (row.DeathCause ?? "Unknown")
-                : DeathCauseHelper.GetDisplayName(death);
+            row.DeathCause = DeathCauseHelper.GetDisplayName(death, deathTagStrings) is var resolved && resolved != "Unknown"
+                ? resolved
+                : (row.DeathCause ?? "Unknown");
             row.Placement = string.IsNullOrWhiteSpace(placement) ? null : placement;
             row.Pickaxe = pickaxe;
             row.Glider = glider;
