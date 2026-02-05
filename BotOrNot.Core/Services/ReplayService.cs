@@ -253,6 +253,7 @@ public sealed class ReplayService : IReplayService
         }
 
         // Second pass: build elimination lists (only finishes, not knocks)
+        string? ownerEliminatedBy = null;
         foreach (var elim in result.Eliminations ?? Enumerable.Empty<object>())
         {
             var isKnock = ReflectionUtils.GetBool(elim, "Knocked");
@@ -265,6 +266,20 @@ public sealed class ReplayService : IReplayService
             var eliminatedId = ReflectionUtils.FirstString(elimInfo, "Id")
                                ?? ReflectionUtils.FirstString(elim, "Eliminated")
                                ?? "unknown";
+            var eliminatorId = ReflectionUtils.FirstString(
+                ReflectionUtils.GetObject(elim, "EliminatorInfo"), "Id")
+                ?? ReflectionUtils.FirstString(elim, "Eliminator")
+                ?? "unknown";
+
+            // Track who eliminated the replay owner
+            if (!string.IsNullOrEmpty(ownerId) &&
+                eliminatedId.Equals(ownerId, StringComparison.OrdinalIgnoreCase) &&
+                !eliminatorId.Equals(ownerId, StringComparison.OrdinalIgnoreCase))
+            {
+                ownerEliminatedBy = playersById.TryGetValue(eliminatorId, out var eliminatorRow)
+                    ? eliminatorRow.Name ?? eliminatorRow.Id
+                    : eliminatorId;
+            }
 
             var display = playersById.TryGetValue(eliminatedId, out var row)
                 ? $"{row.Name ?? row.Id} (bot={row.Bot}, kills={row.Kills})"
@@ -365,6 +380,7 @@ public sealed class ReplayService : IReplayService
             OwnerEliminations = ownerEliminations,
             OwnerName = ownerName,
             OwnerKills = ownerKills,
+            OwnerEliminatedBy = ownerEliminatedBy,
             Metadata = metadata
         };
     }

@@ -12,6 +12,7 @@ public sealed class ReplayData
     /// respawn token kills that don't appear in elimination events.
     /// </summary>
     public int? OwnerKills { get; set; }
+    public string? OwnerEliminatedBy { get; set; }
     public ReplayMetadata Metadata { get; set; } = new();
 }
 

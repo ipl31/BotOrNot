@@ -128,10 +128,14 @@ public class MainWindowViewModel : ReactiveObject
                 ? $"Placement: #{ownerPlacement}"
                 : "Placement: Unknown";
 
+            var eliminatedByText = ownerPlacement != "1" && data.OwnerEliminatedBy != null
+                ? $" | Eliminated by: {data.OwnerEliminatedBy}"
+                : "";
+
             MetadataText = $"File: {data.Metadata.FileName}\n" +
                           $"Mode: {data.Metadata.GameMode}\n" +
                           $"Playlist Name: {data.Metadata.Playlist}\n" +
-                          $"Duration: {data.Metadata.MatchDurationMinutes:F1} minutes | {placementText}\n" +
+                          $"Duration: {data.Metadata.MatchDurationMinutes:F1} minutes | {placementText}{eliminatedByText}\n" +
                           $"Players: {data.Metadata.PlayerCount}" + (data.Metadata.MaxPlayers.HasValue ? $" (Max: {data.Metadata.MaxPlayers})" : "") + "\n" +
                           $"Eliminations (in replay): {data.Metadata.EliminationCount}";
         }
