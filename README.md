@@ -5,17 +5,17 @@ A cross-platform desktop application that analyzes Fortnite replay files to iden
 ## Features
 
 - **Replay Analysis**: Load and parse Fortnite `.replay` files
+- **Lobby Breakdown**: See every player in your lobby - their username, level, kill count, and cause of death
 - **Bot Detection**: Identifies bot players based on replay data
-- **Player Statistics**: View player names, levels, platforms, kills, and death causes
 - **Your Eliminations**: See a breakdown of who you eliminated - how many were bots vs real players
 - **Match Metadata**: View game mode, match duration, and player counts
 - **Platform Breakdown**: See distribution of players across PC, PlayStation, Xbox, Switch, and mobile
 
 ## Screenshot
 
-Load a replay file to see:
-- **Your Eliminations**: Players you eliminated with bot/player breakdown
-- **Players Seen**: All players in the match with platform distribution
+![Bot or Not? screenshot](docs/screenshot.png)
+
+Video walkthrough by [Agminate](https://youtu.be/rwa8cMH_lLM)
 
 ## Installation
 
