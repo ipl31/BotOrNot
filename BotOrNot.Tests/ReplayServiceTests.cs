@@ -73,8 +73,8 @@ public class ReplayServiceTests
         Assert.That(result.OwnerName, Is.Not.Null.And.Not.Empty,
             "Could not find replay owner");
 
-        Assert.That(result.OwnerEliminations.Count, Is.EqualTo(7),
-            $"Expected recording player ({result.OwnerName}) to have 7 eliminations, " +
+        Assert.That(result.OwnerEliminations.Count, Is.EqualTo(8),
+            $"Expected recording player ({result.OwnerName}) to have 8 eliminations, " +
             $"but found {result.OwnerEliminations.Count}");
     }
 
@@ -213,7 +213,7 @@ public class ReplayServiceTests
     /// </summary>
     [TestCase("Blitz_ForbiddenFruit_CalmSambucusBRSquad_Owner_Elim_1_Team_Elim_3_Place_3.replay", 1)]
     [TestCase("Blitz_ForbiddenFruitNoBuildBRSquad_Owner_Elim_1_Team_Elim_12_Place_1.replay", 1)]
-    [TestCase("Reload_PunchBerryDuo_Owner_Elim_5_Team_Elim_1_Place_1.replay", 4)]
+    [TestCase("Reload_PunchBerryDuo_Owner_Elim_5_Team_Elim_1_Place_1.replay", 5)]
     public async Task OwnerElimListLengthMatchesElimCount(string replayFileName, int expectedElimCount)
     {
         // Arrange

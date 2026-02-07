@@ -217,8 +217,8 @@ public sealed class ReplayService : IReplayService
         var eliminations = new List<string>();
         var ownerEliminations = new List<PlayerRow>();
 
-        // Track knock/finish states for owner elimination credit with 60-second knock window
-        var everKnocked = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // Track pending knocks (consumed on finish) for owner elimination credit with 60-second window
+        var pendingKnocks = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var ownerKnockTimes = new Dictionary<string, TimeSpan>(StringComparer.OrdinalIgnoreCase);
 
         string? ownerEliminatedBy = null;
@@ -242,7 +242,7 @@ public sealed class ReplayService : IReplayService
 
             if (isKnock)
             {
-                everKnocked.Add(eliminatedId);
+                pendingKnocks.Add(eliminatedId);
                 if (isOwnerAction && eventTime.HasValue)
                     ownerKnockTimes[eliminatedId] = eventTime.Value;
                 else if (!isOwnerAction)
@@ -269,9 +269,9 @@ public sealed class ReplayService : IReplayService
                 // Credit owner for this elimination?
                 var creditOwner = false;
 
-                if (!everKnocked.Contains(eliminatedId) && isOwnerAction)
+                if (!pendingKnocks.Contains(eliminatedId) && isOwnerAction)
                 {
-                    // Direct finish — victim was never knocked by anyone
+                    // Direct finish — no pending knock for this victim
                     creditOwner = true;
                 }
                 else if (ownerKnockTimes.TryGetValue(eliminatedId, out var knockTime)
@@ -299,6 +299,7 @@ public sealed class ReplayService : IReplayService
                     });
                 }
 
+                pendingKnocks.Remove(eliminatedId);
                 ownerKnockTimes.Remove(eliminatedId);
             }
         }
