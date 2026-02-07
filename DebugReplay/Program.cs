@@ -6,9 +6,40 @@ using Unreal.Core.Models.Enums;
 
 string? replayPath = args.Length > 0 ? args[0] : null;
 
+if (!string.IsNullOrEmpty(replayPath) && Directory.Exists(replayPath))
+{
+    await CompareElims.RunAsync(replayPath);
+    return;
+}
+
+if (args.Length > 1 && args[0] == "--dump-owner")
+{
+    await DumpOwnerElims.RunAsync(args[1]);
+    return;
+}
+
+if (args.Length > 1 && args[0] == "--dump-fields")
+{
+    DumpElimFields.Run(args[1]);
+    return;
+}
+
+if (args.Length > 2 && args[0] == "--dump-player")
+{
+    DumpPlayerElims.Run(args[1], args[2]);
+    return;
+}
+
+if (args.Length > 1 && args[0] == "--dump-all")
+{
+    string? outFile = args.Length > 2 ? args[2] : null;
+    DumpAllElims.Run(args[1], outFile);
+    return;
+}
+
 if (string.IsNullOrEmpty(replayPath) || !File.Exists(replayPath))
 {
-    Console.WriteLine("Please provide a path to a .replay file as an argument");
+    Console.WriteLine("Please provide a path to a .replay file or directory as an argument");
     return;
 }
 

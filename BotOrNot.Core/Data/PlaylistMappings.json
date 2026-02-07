@@ -58,8 +58,12 @@
     { "playlist_name": "Playlist_NoBuild_Ranked_Trio", "display_name": "Ranked Zero Build - Trios", "_source": "manual" },
     { "playlist_name": "Playlist_NoBuild_Ranked_Squad", "display_name": "Ranked Zero Build - Squads", "_source": "manual" },
 
-    { "playlist_name": "Playlist_ForbiddenFruitNoBuildBRSolo", "display_name": "Blitz - Solo", "_source": "manual" },
-    { "playlist_name": "Playlist_ForbiddenFruitNoBuildBRDuo", "display_name": "Blitz - Duos", "_source": "manual" },
-    { "playlist_name": "Playlist_ForbiddenFruitNoBuildBRSquad", "display_name": "Blitz - Squads", "_source": "manual" }
+    { "playlist_name": "Playlist_ForbiddenFruitNoBuildBRSolo", "display_name": "Blitz Asteria Awakened - Solo", "_source": "manual" },
+    { "playlist_name": "Playlist_ForbiddenFruitNoBuildBRDuo", "display_name": "Blitz Asteria Awakened - Duos", "_source": "manual" },
+    { "playlist_name": "Playlist_ForbiddenFruitNoBuildBRSquad", "display_name": "Blitz Asteria Awakened - Squads", "_source": "manual" },
+
+    {"playlist_name": "Playlist_ForbiddenFruit_CalmSambucusBRSolo", "display_name": "Blitz Starfall Island - Solo", "_source": "manual"},
+    {"playlist_name": "Playlist_ForbiddenFruit_CalmSambucusBRDuo", "display_name": "Blitz Starfall Island - Duos", "_source": "manual"},
+    {"playlist_name": "Playlist_ForbiddenFruit_CalmSambucusBRSquad", "display_name": "Blitz Starfall Island - Squads", "_source": "manual"}
   ]
 }

@@ -10,4 +10,8 @@
         <PackageReference Include="FortniteReplayReader" Version="2.4.0" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
     </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\BotOrNot.Core\BotOrNot.Core.csproj" />
+    </ItemGroup>
 </Project>
