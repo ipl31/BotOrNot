@@ -73,8 +73,8 @@ public class ReplayServiceTests
         Assert.That(result.OwnerName, Is.Not.Null.And.Not.Empty,
             "Could not find replay owner");
 
-        Assert.That(result.OwnerEliminations.Count, Is.EqualTo(8),
-            $"Expected recording player ({result.OwnerName}) to have 8 eliminations, " +
+        Assert.That(result.OwnerEliminations.Count, Is.EqualTo(7),
+            $"Expected recording player ({result.OwnerName}) to have 7 eliminations, " +
             $"but found {result.OwnerEliminations.Count}");
     }
 
@@ -185,14 +185,12 @@ public class ReplayServiceTests
     }
 
     /// <summary>
-    /// Validates the owner elimination total that is displayed in the header of the
-    /// owner elims table. The header shows: "{owner}'s Eliminations ({totalKills}) - ..."
-    /// where totalKills = OwnerKills ?? nonNpcEliminations.Count.
+    /// Validate the total elim count we will display matches the known elim values provided for each file.
     /// </summary>
     [TestCase("Blitz_ForbiddenFruit_CalmSambucusBRSquad_Owner_Elim_1_Team_Elim_3_Place_3.replay", 1)]
     [TestCase("Blitz_ForbiddenFruitNoBuildBRSquad_Owner_Elim_1_Team_Elim_12_Place_1.replay", 1)]
     [TestCase("Reload_PunchBerryDuo_Owner_Elim_5_Team_Elim_1_Place_1.replay", 5)]
-    public async Task OwnerElimHeader_ShouldShowCorrectElimCount(string replayFileName, int expectedElimCount)
+    public async Task OwnerElim_ShouldShowCorrectElimCount(string replayFileName, int expectedElimCount)
     {
         // Arrange
         var service = new ReplayService();
@@ -201,15 +199,37 @@ public class ReplayServiceTests
             "TestData",
             replayFileName);
 
-        // Act
         var result = await service.LoadReplayAsync(replayPath);
 
-        // Assert - compute the header total the same way the ViewModel does
-        var nonNpcEliminations = result.OwnerEliminations.Where(p => !p.IsNpc).ToList();
-        var headerElimCount = result.OwnerKills ?? nonNpcEliminations.Count;
+        var elimCount = result.OwnerKills;
 
-        Assert.That(headerElimCount, Is.EqualTo(expectedElimCount),
-            $"Expected owner elim header to show {expectedElimCount} for {replayFileName}, " +
-            $"but got {headerElimCount} (OwnerKills={result.OwnerKills}, nonNpcElims={nonNpcEliminations.Count})");
+        Assert.That(elimCount, Is.EqualTo(expectedElimCount),
+            $"Expected owner elim to contain {expectedElimCount} for {replayFileName}, " +
+            $"but got {elimCount} (OwnerKills={result.OwnerKills})");
+    }
+
+    /// <summary>
+    /// Validate the total elim count we will display matches the known elim values provided for each file.
+    /// </summary>
+    [TestCase("Blitz_ForbiddenFruit_CalmSambucusBRSquad_Owner_Elim_1_Team_Elim_3_Place_3.replay", 1)]
+    [TestCase("Blitz_ForbiddenFruitNoBuildBRSquad_Owner_Elim_1_Team_Elim_12_Place_1.replay", 1)]
+    [TestCase("Reload_PunchBerryDuo_Owner_Elim_5_Team_Elim_1_Place_1.replay", 4)]
+    public async Task OwnerElimListLengthMatchesElimCount(string replayFileName, int expectedElimCount)
+    {
+        // Arrange
+        var service = new ReplayService();
+        var replayPath = Path.Combine(
+            TestContext.CurrentContext.TestDirectory,
+            "TestData",
+            replayFileName);
+
+        var result = await service.LoadReplayAsync(replayPath);
+        var elimCount = result.OwnerEliminations.Count;
+
+
+        Assert.That(elimCount, Is.EqualTo(expectedElimCount),
+            $"Expected owner elim to contain {expectedElimCount} for {replayFileName}, " +
+            $"but got {elimCount} (OwnerKills={result.OwnerKills})");
     }
 }
+

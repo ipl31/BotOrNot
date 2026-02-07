@@ -217,14 +217,12 @@ public sealed class ReplayService : IReplayService
         var eliminations = new List<string>();
         var ownerEliminations = new List<PlayerRow>();
 
-        // Track knock and finish states for proper elimination counting
-        // An elimination counts when: you knock someone AND they get finished (by anyone)
-        // Or: you directly eliminate a solo/last-standing player (who can't be knocked)
+        // Track knock/finish states for owner elimination credit with 60-second knock window
         var everKnocked = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var knockedByOwner = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var finishedPlayers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var ownerKnockTimes = new Dictionary<string, TimeSpan>(StringComparer.OrdinalIgnoreCase);
 
-        // First pass: identify all knocked players and track who the owner knocked
+        string? ownerEliminatedBy = null;
+
         foreach (var elim in result.Eliminations ?? Enumerable.Empty<object>())
         {
             var isKnock = ReflectionUtils.GetBool(elim, "Knocked");
@@ -240,97 +238,51 @@ public sealed class ReplayService : IReplayService
             var isOwnerAction = !string.IsNullOrEmpty(ownerId) &&
                                 eliminatorId.Equals(ownerId, StringComparison.OrdinalIgnoreCase);
 
+            var eventTime = ParseElimTime(ReflectionUtils.GetObject(elim, "Time"));
+
             if (isKnock)
             {
                 everKnocked.Add(eliminatedId);
-                if (isOwnerAction)
-                    knockedByOwner.Add(eliminatedId);
+                if (isOwnerAction && eventTime.HasValue)
+                    ownerKnockTimes[eliminatedId] = eventTime.Value;
+                else if (!isOwnerAction)
+                    ownerKnockTimes.Remove(eliminatedId);
             }
             else
             {
-                finishedPlayers.Add(eliminatedId);
-            }
-        }
+                // Finish event — add to general eliminations list
+                var display = playersById.TryGetValue(eliminatedId, out var row)
+                    ? $"{row.Name ?? row.Id} (bot={row.Bot}, kills={row.Kills})"
+                    : eliminatedId;
+                eliminations.Add(display);
 
-        // Second pass: build elimination lists (only finishes, not knocks)
-        string? ownerEliminatedBy = null;
-        foreach (var elim in result.Eliminations ?? Enumerable.Empty<object>())
-        {
-            var isKnock = ReflectionUtils.GetBool(elim, "Knocked");
-
-            // Skip knockdowns - only show actual eliminations (finished players)
-            if (isKnock)
-                continue;
-
-            var elimInfo = ReflectionUtils.GetObject(elim, "EliminatedInfo");
-            var eliminatedId = ReflectionUtils.FirstString(elimInfo, "Id")
-                               ?? ReflectionUtils.FirstString(elim, "Eliminated")
-                               ?? "unknown";
-            var eliminatorId = ReflectionUtils.FirstString(
-                ReflectionUtils.GetObject(elim, "EliminatorInfo"), "Id")
-                ?? ReflectionUtils.FirstString(elim, "Eliminator")
-                ?? "unknown";
-
-            // Track who eliminated the replay owner
-            if (!string.IsNullOrEmpty(ownerId) &&
-                eliminatedId.Equals(ownerId, StringComparison.OrdinalIgnoreCase) &&
-                !eliminatorId.Equals(ownerId, StringComparison.OrdinalIgnoreCase))
-            {
-                ownerEliminatedBy = playersById.TryGetValue(eliminatorId, out var eliminatorRow)
-                    ? eliminatorRow.Name ?? eliminatorRow.Id
-                    : eliminatorId;
-            }
-
-            var display = playersById.TryGetValue(eliminatedId, out var row)
-                ? $"{row.Name ?? row.Id} (bot={row.Bot}, kills={row.Kills})"
-                : eliminatedId;
-
-            eliminations.Add(display);
-        }
-
-        // Build owner eliminations: knocks by owner that resulted in finish + direct eliminations
-        foreach (var victimId in knockedByOwner.Where(id => finishedPlayers.Contains(id)))
-        {
-            if (playersById.TryGetValue(victimId, out var victim))
-            {
-                ownerEliminations.Add(new PlayerRow
+                // Track who eliminated the replay owner
+                if (!string.IsNullOrEmpty(ownerId) &&
+                    eliminatedId.Equals(ownerId, StringComparison.OrdinalIgnoreCase) &&
+                    !eliminatorId.Equals(ownerId, StringComparison.OrdinalIgnoreCase))
                 {
-                    Id = victim.Id,
-                    Name = victim.Name,
-                    Level = victim.Level,
-                    Bot = victim.Bot,
-                    Platform = victim.Platform,
-                    Kills = victim.Kills,
-                    TeamIndex = victim.TeamIndex,
-                    DeathCause = victim.DeathCause,
-                    Pickaxe = victim.Pickaxe,
-                    Glider = victim.Glider
-                });
-            }
-        }
+                    ownerEliminatedBy = playersById.TryGetValue(eliminatorId, out var eliminatorRow)
+                        ? eliminatorRow.Name ?? eliminatorRow.Id
+                        : eliminatorId;
+                }
 
-        // Add direct eliminations by owner (solo/last-standing players who were never knocked)
-        foreach (var elim in result.Eliminations ?? Enumerable.Empty<object>())
-        {
-            var isKnock = ReflectionUtils.GetBool(elim, "Knocked");
-            if (isKnock) continue;
+                // Credit owner for this elimination?
+                var creditOwner = false;
 
-            var eliminatedId = ReflectionUtils.FirstString(
-                ReflectionUtils.GetObject(elim, "EliminatedInfo"), "Id")
-                ?? ReflectionUtils.FirstString(elim, "Eliminated")
-                ?? "unknown";
-            var eliminatorId = ReflectionUtils.FirstString(
-                ReflectionUtils.GetObject(elim, "EliminatorInfo"), "Id")
-                ?? ReflectionUtils.FirstString(elim, "Eliminator")
-                ?? "unknown";
+                if (!everKnocked.Contains(eliminatedId) && isOwnerAction)
+                {
+                    // Direct finish — victim was never knocked by anyone
+                    creditOwner = true;
+                }
+                else if (ownerKnockTimes.TryGetValue(eliminatedId, out var knockTime)
+                         && eventTime.HasValue
+                         && (eventTime.Value - knockTime).TotalSeconds <= 60)
+                {
+                    // Owner knocked them and finish arrived within 60 seconds
+                    creditOwner = true;
+                }
 
-            var isOwnerKill = !string.IsNullOrEmpty(ownerId) &&
-                              eliminatorId.Equals(ownerId, StringComparison.OrdinalIgnoreCase);
-
-            // Direct elimination: owner finished someone who was never knocked
-            if (isOwnerKill && !everKnocked.Contains(eliminatedId))
-            {
-                if (playersById.TryGetValue(eliminatedId, out var victim))
+                if (creditOwner && playersById.TryGetValue(eliminatedId, out var victim))
                 {
                     ownerEliminations.Add(new PlayerRow
                     {
@@ -346,6 +298,8 @@ public sealed class ReplayService : IReplayService
                         Glider = victim.Glider
                     });
                 }
+
+                ownerKnockTimes.Remove(eliminatedId);
             }
         }
 
@@ -385,4 +339,15 @@ public sealed class ReplayService : IReplayService
         };
     }
 
+    static TimeSpan? ParseElimTime(object? timeObj)
+    {
+        if (timeObj is TimeSpan ts) return ts;
+        var str = timeObj?.ToString();
+        if (string.IsNullOrWhiteSpace(str)) return null;
+        var parts = str.Split(':');
+        if (parts.Length == 2 && int.TryParse(parts[0], out var min) && int.TryParse(parts[1], out var sec))
+            return TimeSpan.FromSeconds(min * 60 + sec);
+        if (TimeSpan.TryParse(str, out var parsed)) return parsed;
+        return null;
+    }
 }

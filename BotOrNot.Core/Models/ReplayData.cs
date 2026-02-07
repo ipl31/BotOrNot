@@ -8,8 +8,6 @@ public sealed class ReplayData
     public string? OwnerName { get; set; }
     /// <summary>
     /// Authoritative kill count from the owner's PlayerData.Kills property.
-    /// This is more accurate than OwnerEliminations.Count as it includes
-    /// respawn token kills that don't appear in elimination events.
     /// </summary>
     public int? OwnerKills { get; set; }
     public string? OwnerEliminatedBy { get; set; }
