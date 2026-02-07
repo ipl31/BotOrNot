@@ -163,6 +163,13 @@ public sealed class ReplayService : IReplayService
             }
         }
 
+        // Winners never died — show "N/A Won Match" instead of "Unknown"
+        foreach (var row in playersById.Values)
+        {
+            if (row.IsWinner && row.DeathCause == "Unknown")
+                row.DeathCause = "N/A Won Match";
+        }
+
         // Find replay owner from PlayerData by checking IsReplayOwner property
         string? ownerId = null;
         string? ownerName = null;
