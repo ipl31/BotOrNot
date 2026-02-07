@@ -23,7 +23,7 @@
 
         <!-- Top Bar -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="8" Spacing="8">
-            <Image Source="avares://BotOrNot.Avalonia/Assets/logo.png"
+            <Image Source="avares://BotOrNot/Assets/logo.png"
                    Width="32"
                    Height="32"
                    VerticalAlignment="Center" />
