@@ -24,7 +24,7 @@ Video walkthrough by [Agminate](https://youtu.be/rwa8cMH_lLM)
 Download the latest release from the [Releases](https://github.com/ipl31/BotOrNot/releases) page:
 1. Download `BotOrNot-Windows-x64.zip`
 2. Extract the ZIP file
-3. Run `BotOrNot.Avalonia.exe`
+3. Run `BotOrNot.exe`
 
 ### Building from Source
 
