@@ -37,6 +37,99 @@ if (args.Length > 1 && args[0] == "--dump-all")
     return;
 }
 
+if (args.Length > 1 && args[0] == "--dump-unknown-deaths")
+{
+    DumpUnknownDeaths.Run(args[1]);
+    return;
+}
+
+if (args.Length > 2 && args[0] == "--dump-playerdata")
+{
+    var searchName = args[2];
+    using var lf = LoggerFactory.Create(b => b.AddFilter(_ => false));
+    var rdr = new ReplayReader(lf.CreateLogger<ReplayReader>(), ParseMode.Full);
+    var res = rdr.ReadReplay(args[1]);
+    int entryIdx = 0;
+    foreach (var pd in res.PlayerData ?? Enumerable.Empty<object>())
+    {
+        var pname = pd.GetType().GetProperty("PlayerName", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)?.GetValue(pd)?.ToString();
+        if (pname == null || !pname.Contains(searchName, StringComparison.OrdinalIgnoreCase)) { entryIdx++; continue; }
+        Console.WriteLine($"=== PlayerData entry [{entryIdx}] for {pname} ===");
+        DumpAllProperties(pd, "  ");
+        // Expand DeathTags
+        var dtObj = pd.GetType().GetProperty("DeathTags", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)?.GetValue(pd);
+        if (dtObj is IEnumerable dtEnum)
+        {
+            Console.WriteLine("  DeathTags (expanded):");
+            foreach (var tag in dtEnum)
+                Console.WriteLine($"    - {tag}");
+        }
+        Console.WriteLine();
+        entryIdx++;
+    }
+    return;
+}
+
+if (args.Length > 1 && args[0] == "--compare-death")
+{
+    using var lf2 = LoggerFactory.Create(b => b.AddFilter(_ => false));
+    var rdr2 = new ReplayReader(lf2.CreateLogger<ReplayReader>(), ParseMode.Full);
+    var res2 = rdr2.ReadReplay(args[1]);
+
+    // Build PlayerData lookup: id -> (name, DeathCause)
+    var pdLookup = new Dictionary<string, (string name, string? deathCause)>(StringComparer.OrdinalIgnoreCase);
+    foreach (var pd in res2.PlayerData ?? Enumerable.Empty<object>())
+    {
+        var id = pd.GetType().GetProperty("PlayerId", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)?.GetValue(pd)?.ToString();
+        var name = pd.GetType().GetProperty("PlayerName", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)?.GetValue(pd)?.ToString();
+        var dc = pd.GetType().GetProperty("DeathCause", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)?.GetValue(pd)?.ToString();
+        if (!string.IsNullOrEmpty(id))
+            pdLookup[id] = (name ?? "?", dc);
+    }
+
+    Console.WriteLine($"{"Idx",-5} {"Victim",-25} {"GunType",-10} {"DeathCause",-12} {"Match?",-8}");
+    Console.WriteLine(new string('-', 65));
+
+    int idx2 = 0;
+    int matches = 0, mismatches = 0, noData = 0;
+    foreach (var elim in res2.Eliminations ?? Enumerable.Empty<object>())
+    {
+        var knocked = elim.GetType().GetProperty("Knocked", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)?.GetValue(elim);
+        if (knocked is true) { idx2++; continue; } // skip knocks
+
+        var eInfo = elim.GetType().GetProperty("EliminatedInfo", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)?.GetValue(elim);
+        var elimId = eInfo?.GetType().GetProperty("Id", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)?.GetValue(eInfo)?.ToString() ?? "?";
+        var gunType = elim.GetType().GetProperty("GunType", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)?.GetValue(elim)?.ToString() ?? "?";
+
+        var victimName = pdLookup.TryGetValue(elimId, out var info) ? info.name : "?";
+        var deathCause = info.deathCause ?? "(null)";
+
+        string matchStr;
+        if (!pdLookup.ContainsKey(elimId) || info.deathCause == null)
+        {
+            matchStr = "N/A";
+            noData++;
+        }
+        else if (gunType == deathCause)
+        {
+            matchStr = "YES";
+            matches++;
+        }
+        else
+        {
+            matchStr = "NO";
+            mismatches++;
+        }
+
+        Console.WriteLine($"[{idx2,-3}] {victimName,-25} {gunType,-10} {deathCause,-12} {matchStr,-8}");
+        idx2++;
+    }
+
+    Console.WriteLine(new string('-', 65));
+    Console.WriteLine($"Matches: {matches}, Mismatches: {mismatches}, No data: {noData}");
+    return;
+}
+
 if (string.IsNullOrEmpty(replayPath) || !File.Exists(replayPath))
 {
     Console.WriteLine("Please provide a path to a .replay file or directory as an argument");
