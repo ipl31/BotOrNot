@@ -225,7 +225,8 @@ public sealed class ReplayService : IReplayService
         var ownerEliminations = new List<PlayerRow>();
 
         // Track pending knocks (consumed on finish) for owner elimination credit with 60-second window
-        var pendingKnocks = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // Stores knock time so stale knocks (player revived in Reload) can be detected
+        var pendingKnocks = new Dictionary<string, TimeSpan?>(StringComparer.OrdinalIgnoreCase);
         var ownerKnockTimes = new Dictionary<string, TimeSpan>(StringComparer.OrdinalIgnoreCase);
 
         string? ownerEliminatedBy = null;
@@ -249,7 +250,7 @@ public sealed class ReplayService : IReplayService
 
             if (isKnock)
             {
-                pendingKnocks.Add(eliminatedId);
+                pendingKnocks[eliminatedId] = eventTime;
                 if (isOwnerAction && eventTime.HasValue)
                     ownerKnockTimes[eliminatedId] = eventTime.Value;
                 else if (!isOwnerAction)
@@ -276,9 +277,14 @@ public sealed class ReplayService : IReplayService
                 // Credit owner for this elimination?
                 var creditOwner = false;
 
-                if (!pendingKnocks.Contains(eliminatedId) && isOwnerAction)
+                // A pending knock is stale if >60s have passed (player was revived)
+                var hasActiveKnock = pendingKnocks.TryGetValue(eliminatedId, out var knockedAt)
+                    && (!knockedAt.HasValue || !eventTime.HasValue
+                        || (eventTime.Value - knockedAt.Value).TotalSeconds <= 60);
+
+                if (!hasActiveKnock && isOwnerAction)
                 {
-                    // Direct finish — no pending knock for this victim
+                    // Direct finish — no active knock for this victim
                     creditOwner = true;
                 }
                 else if (ownerKnockTimes.TryGetValue(eliminatedId, out var knockTime)
