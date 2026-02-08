@@ -63,3 +63,8 @@ BenchmarkDotNet.Artifacts/
 
 # Publish output
 publish/
+
+# Debug dump files
+*.txt
+nul
+/2
