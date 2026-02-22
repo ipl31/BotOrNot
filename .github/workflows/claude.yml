@@ -33,3 +33,4 @@ jobs:
             3. Security vulnerabilities
             4. Performance issues
           claude_args: "--max-turns 5"
+          show_full_output: true
