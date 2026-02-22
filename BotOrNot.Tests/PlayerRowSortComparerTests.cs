@@ -140,6 +140,58 @@ public class PlayerRowSortComparerTests
         Assert.That(sorted[3], Is.AnyOf("unknown", null));
     }
 
+    // --- Unknowns-first mode (mode 3 of 3-mode cycle) ---
+
+    [Test]
+    public void UnknownsFirst_Ascending_PushesUnknownsToTop()
+    {
+        var comparer = new PlayerRowSortComparer(p => p.Kills, descending: false, numeric: true, unknownsFirst: true);
+        var rows = new[]
+        {
+            Row(kills: "5"), Row(kills: "unknown"), Row(kills: "1"), Row(kills: null), Row(kills: "10")
+        };
+
+        var sorted = rows.OrderBy(r => r, comparer).Select(r => r.Kills).ToList();
+
+        // Unknowns first, then numeric values ascending
+        Assert.That(sorted[0], Is.AnyOf("unknown", null));
+        Assert.That(sorted[1], Is.AnyOf("unknown", null));
+        Assert.That(sorted[2], Is.EqualTo("1"));
+        Assert.That(sorted[3], Is.EqualTo("5"));
+        Assert.That(sorted[4], Is.EqualTo("10"));
+    }
+
+    [Test]
+    public void UnknownsFirst_Descending_StillPushesUnknownsToTop()
+    {
+        var comparer = new PlayerRowSortComparer(p => p.Kills, descending: true, numeric: true, unknownsFirst: true);
+        var rows = new[]
+        {
+            Row(kills: "5"), Row(kills: "unknown"), Row(kills: "1"), Row(kills: null), Row(kills: "10")
+        };
+
+        // Simulate DataGrid's descending negation
+        var sorted = rows.OrderBy(r => r, new NegatingComparer(comparer)).Select(r => r.Kills).ToList();
+
+        // Unknowns first, then numeric values (descending since DataGrid negates)
+        Assert.That(sorted[0], Is.AnyOf("unknown", null));
+        Assert.That(sorted[1], Is.AnyOf("unknown", null));
+    }
+
+    [Test]
+    public void UnknownsFirst_NoUnknowns_StillSortsNumerically()
+    {
+        var comparer = new PlayerRowSortComparer(p => p.Kills, descending: false, numeric: true, unknownsFirst: true);
+        var rows = new[]
+        {
+            Row(kills: "10"), Row(kills: "2"), Row(kills: "5")
+        };
+
+        var sorted = rows.OrderBy(r => r, comparer).Select(r => r.Kills).ToList();
+
+        Assert.That(sorted, Is.EqualTo(new[] { "2", "5", "10" }));
+    }
+
     // --- String sorting ---
 
     [Test]

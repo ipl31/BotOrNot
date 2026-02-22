@@ -207,32 +207,76 @@ def focus_app():
     time.sleep(0.5)
 
 
-def focus_app_by_pid():
-    """Focus the BotOrNot window aggressively using multiple methods."""
+def move_window_to_current_space(x: int = 100, y: int = 100):
+    """
+    Bring the BotOrNot window to the current Space, raise it above all other windows,
+    and maximize it so it fills the screen.
+    """
     if not _app_process:
         return
+    pid = _app_process.pid
+
+    script = f'''
+tell application "System Events"
+    set theProcess to first process whose unix id is {pid}
+    set frontmost of theProcess to true
+    tell theProcess
+        if (count of windows) > 0 then
+            tell window 1
+                perform action "AXRaise"
+            end tell
+        end if
+    end tell
+end tell
+'''
+    result = subprocess.run(["osascript", "-e", script], capture_output=True, text=True, timeout=10)
+    if result.returncode != 0:
+        print(f"  [move_window] AppleScript error: {result.stderr.strip()}")
+    else:
+        print(f"  Window raised to front")
+
+    # Maximize via double-clicking the title bar (zoom)
+    time.sleep(0.3)
+    info = get_window_info_quartz()
+    if info:
+        # Double-click title bar to zoom/maximize
+        title_x = info["x"] + info["w"] // 2
+        title_y = info["y"] + 15
+        pyautogui.doubleClick(title_x, title_y)
+        print(f"  Window maximized")
+    time.sleep(0.5)
+
+
+def focus_app_by_pid():
+    """Focus and RAISE the BotOrNot window above all others."""
+    if not _app_process:
+        return
+    pid = _app_process.pid
 
     # Method 1: NSRunningApplication activate
     try:
         from AppKit import NSRunningApplication, NSApplicationActivateIgnoringOtherApps
-        app = NSRunningApplication.runningApplicationWithProcessIdentifier_(_app_process.pid)
+        app = NSRunningApplication.runningApplicationWithProcessIdentifier_(pid)
         if app:
             app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps)
             time.sleep(0.3)
     except Exception:
         pass
 
-    # Method 2: AppleScript frontmost (belt + suspenders)
-    focus_app()
-
-    # Method 3: Click the center of the window to ensure it's active
-    info = get_window_info_quartz()
-    if info:
-        center_x = info["x"] + info["w"] // 2
-        center_y = info["y"] + info["h"] // 2
-        # Click on title bar area (safe — won't trigger buttons)
-        pyautogui.click(center_x, info["y"] + 15)
-        time.sleep(0.3)
+    # Method 2: AppleScript — set frontmost AND raise the window
+    script = f'''
+tell application "System Events"
+    set theProcess to first process whose unix id is {pid}
+    set frontmost of theProcess to true
+    tell theProcess
+        if (count of windows) > 0 then
+            perform action "AXRaise" of window 1
+        end if
+    end tell
+end tell
+'''
+    subprocess.run(["osascript", "-e", script], capture_output=True, text=True, timeout=10)
+    time.sleep(0.3)
 
 
 def click_at(x: int, y: int, label: str = ""):
@@ -368,12 +412,24 @@ def main():
         return 1
 
     time.sleep(2)  # let the UI finish rendering
+
+    # Move window to a known position on the current Space so clicks land correctly
+    WINDOW_X, WINDOW_Y = 100, 50
+    move_window_to_current_space(x=WINDOW_X, y=WINDOW_Y)
+    time.sleep(0.5)
+
+    # Re-fetch bounds after maximize
+    time.sleep(0.8)
+    info = get_window_info_quartz()
+    if info:
+        bounds = (info["x"], info["y"], info["w"], info["h"])
+        print(f"  Window at: {bounds}")
+
     focus_app_by_pid()
 
-    # Start recording NOW, cropped to the window
-    step("Starting screen recording (cropped to window)")
-    wx, wy, ww, wh = bounds
-    video_path = start_recording(crop={"x": wx, "y": wy, "w": ww, "h": wh})
+    # Start recording — full screen (no crop, avoids coordinate mismatch issues)
+    step("Starting screen recording (full screen)")
+    video_path = start_recording()
 
     screenshot("app_launched")
 
@@ -438,10 +494,12 @@ def main():
     # ------------------------------------------------------------------
     step("Testing column header sorting")
 
-    # Re-fetch window bounds in case it moved
+    # Re-focus and re-fetch bounds
+    focus_app_by_pid()
     new_bounds = get_window_bounds_quartz()
     if new_bounds:
         wx, wy, ww, wh = new_bounds
+        print(f"  Window bounds for sorting: {new_bounds}")
 
     # The DataGrid starts below the metadata panel.  Based on the AXAML,
     # the top area has about ~180-200px of metadata + tabs. Column headers
@@ -462,12 +520,16 @@ def main():
         col_x = col_positions.get(col_name)
         if col_x is None:
             continue
+        # Re-focus before every column to ensure BotOrNot is frontmost
         focus_app_by_pid()
+        time.sleep(0.3)
         print(f"\n  Sorting by {col_name} (ascending) …")
         click_at(col_x, header_y, f"{col_name} header")
         time.sleep(1)
         screenshot(f"sort_{col_name}_asc")
 
+        focus_app_by_pid()
+        time.sleep(0.3)
         print(f"  Sorting by {col_name} (descending) …")
         click_at(col_x, header_y, f"{col_name} header")
         time.sleep(1)

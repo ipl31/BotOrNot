@@ -5,11 +5,14 @@ namespace BotOrNot.Core.Models;
 /// <summary>
 /// Compares PlayerRow objects for DataGrid column sorting.
 /// Numeric fields sort as integers, bot status sorts logically (true → false),
-/// and Unknown/null/empty values always sort to the bottom.
+/// and Unknown/null/empty values sort to bottom or top depending on mode.
 ///
 /// The <paramref name="descending"/> constructor flag must match the DataGrid's
 /// sort direction so the "always-at-bottom" logic survives the DataGrid's
 /// automatic result negation for descending sorts.
+///
+/// When <paramref name="unknownsFirst"/> is true, Unknown/null/empty values
+/// are pushed to the top instead (mode 3 of the 3-mode sort cycle).
 /// </summary>
 public sealed class PlayerRowSortComparer : IComparer<PlayerRow>, IComparer
 {
@@ -17,17 +20,20 @@ public sealed class PlayerRowSortComparer : IComparer<PlayerRow>, IComparer
     private readonly bool _numeric;
     private readonly bool _isBotField;
     private readonly bool _descending;
+    private readonly bool _unknownsFirst;
 
     public PlayerRowSortComparer(
         Func<PlayerRow, string?> selector,
         bool descending = false,
         bool numeric = false,
-        bool isBotField = false)
+        bool isBotField = false,
+        bool unknownsFirst = false)
     {
         _selector = selector;
         _descending = descending;
         _numeric = numeric;
         _isBotField = isBotField;
+        _unknownsFirst = unknownsFirst;
     }
 
     public int Compare(PlayerRow? x, PlayerRow? y)
@@ -42,12 +48,23 @@ public sealed class PlayerRowSortComparer : IComparer<PlayerRow>, IComparer
         var xUnknown = IsUnknownOrEmpty(vx);
         var yUnknown = IsUnknownOrEmpty(vy);
 
-        // Push Unknown/null/empty to bottom regardless of direction.
-        // The DataGrid negates the result for descending, so we
-        // pre-invert so the final result still pushes Unknown last.
-        if (xUnknown && yUnknown) return 0;
-        if (xUnknown) return _descending ? -1 : 1;
-        if (yUnknown) return _descending ? 1 : -1;
+        if (_unknownsFirst)
+        {
+            // Push Unknown/null/empty to TOP.
+            // The DataGrid negates for descending, so pre-invert accordingly.
+            if (xUnknown && yUnknown) return 0;
+            if (xUnknown) return _descending ? 1 : -1;
+            if (yUnknown) return _descending ? -1 : 1;
+        }
+        else
+        {
+            // Push Unknown/null/empty to BOTTOM regardless of direction.
+            // The DataGrid negates the result for descending, so we
+            // pre-invert so the final result still pushes Unknown last.
+            if (xUnknown && yUnknown) return 0;
+            if (xUnknown) return _descending ? -1 : 1;
+            if (yUnknown) return _descending ? 1 : -1;
+        }
 
         int result;
 

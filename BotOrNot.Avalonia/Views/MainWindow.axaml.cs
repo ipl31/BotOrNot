@@ -13,7 +13,11 @@ public partial class MainWindow : Window
 {
     private readonly MainWindowViewModel _viewModel;
     private readonly MenuFlyout _columnsFlyout;
-    private readonly Dictionary<DataGridColumn, bool> _columnSortDescending = new();
+    // For numeric columns: 0 = desc (high→low, unknowns bottom),
+    //                       1 = asc  (low→high, unknowns bottom),
+    //                       2 = unknowns-first
+    // For non-numeric columns: 0 = asc, 1 = desc (standard 2-mode)
+    private readonly Dictionary<DataGridColumn, int> _columnSortMode = new();
     private DataGrid? _playersGrid;
     private Button? _columnsButton;
 
@@ -48,13 +52,29 @@ public partial class MainWindow : Window
         var (selector, numeric, bot) = GetColumnSortInfo(e.Column);
         if (selector == null) return;
 
-        // Track direction ourselves (Avalonia doesn't expose SortDirection on DataGridColumn)
-        _columnSortDescending.TryGetValue(e.Column, out var wasDescending);
-        var willBeDescending = !wasDescending;
-        _columnSortDescending[e.Column] = willBeDescending;
+        _columnSortMode.TryGetValue(e.Column, out var currentMode);
+        int nextMode;
+        int totalModes = numeric ? 3 : 2;
+        nextMode = (currentMode + 1) % totalModes;
+        _columnSortMode[e.Column] = nextMode;
 
-        e.Column.CustomSortComparer = new PlayerRowSortComparer(
-            selector, descending: willBeDescending, numeric: numeric, isBotField: bot);
+        if (numeric)
+        {
+            // Mode 0: desc (high→low), unknowns bottom
+            // Mode 1: asc (low→high), unknowns bottom
+            // Mode 2: unknowns first, numeric values after
+            var descending = nextMode == 0;
+            var unknownsFirst = nextMode == 2;
+            e.Column.CustomSortComparer = new PlayerRowSortComparer(
+                selector, descending: descending, numeric: true, unknownsFirst: unknownsFirst);
+        }
+        else
+        {
+            // Standard 2-mode: mode 0 = asc, mode 1 = desc
+            var descending = nextMode == 1;
+            e.Column.CustomSortComparer = new PlayerRowSortComparer(
+                selector, descending: descending, numeric: false, isBotField: bot);
+        }
     }
 
     private static (Func<PlayerRow, string?>? selector, bool numeric, bool bot) GetColumnSortInfo(
