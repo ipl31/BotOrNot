@@ -13,6 +13,7 @@ public partial class MainWindow : Window
 {
     private readonly MainWindowViewModel _viewModel;
     private readonly MenuFlyout _columnsFlyout;
+    private readonly Dictionary<DataGridColumn, bool> _columnSortDescending = new();
     private DataGrid? _playersGrid;
     private Button? _columnsButton;
 
@@ -42,17 +43,16 @@ public partial class MainWindow : Window
         Loaded += (_, _) => BuildColumnsFlyout();
     }
 
-    private static void OnDataGridSorting(object? sender, DataGridColumnEventArgs e)
+    private void OnDataGridSorting(object? sender, DataGridColumnEventArgs e)
     {
         var (selector, numeric, bot) = GetColumnSortInfo(e.Column);
         if (selector == null) return;
 
-        // The DataGrid toggles: Ascending → Descending, anything else → Ascending
-        var willBeDescending = e.Column.SortDirection == System.ComponentModel.ListSortDirection.Ascending;
+        // Track direction ourselves (Avalonia doesn't expose SortDirection on DataGridColumn)
+        _columnSortDescending.TryGetValue(e.Column, out var wasDescending);
+        var willBeDescending = !wasDescending;
+        _columnSortDescending[e.Column] = willBeDescending;
 
-        // Set a direction-aware comparer. The DataGrid negates the result for
-        // descending sorts, so the comparer pre-inverts the "Unknown at bottom"
-        // logic to counteract that.
         e.Column.CustomSortComparer = new PlayerRowSortComparer(
             selector, descending: willBeDescending, numeric: numeric, isBotField: bot);
     }
