@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using BotOrNot.Avalonia.ViewModels;
+using BotOrNot.Core.Models;
 using ReactiveUI;
 
 namespace BotOrNot.Avalonia.Views;
@@ -32,8 +33,48 @@ public partial class MainWindow : Window
             _columnsButton.Flyout = _columnsFlyout;
         }
 
+        // Wire up custom sorting on both grids
+        var ownerGrid = this.FindControl<DataGrid>("OwnerEliminationsGrid");
+        if (ownerGrid != null) ownerGrid.Sorting += OnDataGridSorting;
+        if (_playersGrid != null) _playersGrid.Sorting += OnDataGridSorting;
+
         // Build the columns menu when the window loads
         Loaded += (_, _) => BuildColumnsFlyout();
+    }
+
+    private static void OnDataGridSorting(object? sender, DataGridColumnEventArgs e)
+    {
+        var (selector, numeric, bot) = GetColumnSortInfo(e.Column);
+        if (selector == null) return;
+
+        // The DataGrid toggles: Ascending → Descending, anything else → Ascending
+        var willBeDescending = e.Column.SortDirection == DataGridSortDirection.Ascending;
+
+        // Set a direction-aware comparer. The DataGrid negates the result for
+        // descending sorts, so the comparer pre-inverts the "Unknown at bottom"
+        // logic to counteract that.
+        e.Column.CustomSortComparer = new PlayerRowSortComparer(
+            selector, descending: willBeDescending, numeric: numeric, isBotField: bot);
+    }
+
+    private static (Func<PlayerRow, string?>? selector, bool numeric, bool bot) GetColumnSortInfo(
+        DataGridColumn column)
+    {
+        return column.Header?.ToString() switch
+        {
+            "Id" => (p => p.Id, false, false),
+            "Name" => (p => p.Name, false, false),
+            "Level" => (p => p.Level, true, false),
+            "Bot" => (p => p.Bot, false, true),
+            "Platform" => (p => p.Platform, false, false),
+            "Kills" => (p => p.Kills, true, false),
+            "Squad" => (p => p.TeamIndex, true, false),
+            "Placement" => (p => p.Placement, true, false),
+            "Death Cause" => (p => p.DeathCause, false, false),
+            "Pickaxe" => (p => p.Pickaxe, false, false),
+            "Glider" => (p => p.Glider, false, false),
+            _ => (null, false, false)
+        };
     }
 
     private async void OpenReplay_Click(object? sender, RoutedEventArgs e)
