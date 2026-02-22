@@ -48,7 +48,7 @@ public partial class MainWindow : Window
         if (selector == null) return;
 
         // The DataGrid toggles: Ascending → Descending, anything else → Ascending
-        var willBeDescending = e.Column.SortDirection == DataGridSortDirection.Ascending;
+        var willBeDescending = e.Column.SortDirection == System.ComponentModel.ListSortDirection.Ascending;
 
         // Set a direction-aware comparer. The DataGrid negates the result for
         // descending sorts, so the comparer pre-inverts the "Unknown at bottom"
