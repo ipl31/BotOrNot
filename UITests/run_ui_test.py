@@ -44,6 +44,7 @@ DEFAULT_REPLAY = os.path.join(
     "UnsavedReplay-2026.01.31-15.34.27.replay",
 )
 SCREENCAPTURE = "/usr/sbin/screencapture"
+FFMPEG = "/opt/homebrew/bin/ffmpeg"
 
 # Columns to click for sort testing (visible columns, left-to-right)
 SORT_COLUMNS = ["Name", "Level", "Kills", "Placement"]
@@ -56,13 +57,22 @@ pyautogui.PAUSE = 0.3
 # Helpers
 # ---------------------------------------------------------------------------
 
-_app_process = None  # holds the subprocess so we can kill on exit
+_app_process = None   # holds the subprocess so we can kill on exit
+_app_window_id = None  # Quartz window ID for targeted capture
+_record_process = None  # ffmpeg screen recording process
 _step = 0
 
 
 def _cleanup(*_args):
-    """Kill the app process on exit."""
-    global _app_process
+    """Kill the app and recording processes on exit."""
+    global _app_process, _record_process
+    if _record_process and _record_process.poll() is None:
+        print("\n[cleanup] Stopping screen recording …")
+        _record_process.terminate()
+        try:
+            _record_process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            _record_process.kill()
     if _app_process and _app_process.poll() is None:
         print("\n[cleanup] Terminating app process …")
         _app_process.terminate()
@@ -87,16 +97,19 @@ def step(msg: str):
 
 
 def screenshot(label: str) -> str:
-    """Take a screenshot using macOS screencapture. Returns the file path."""
+    """Take a screenshot using macOS screencapture. Returns the file path.
+    Uses -l <windowID> to capture the app window across any Space."""
     os.makedirs(SCREENSHOT_DIR, exist_ok=True)
     ts = time.strftime("%H%M%S")
     fname = f"{_step:02d}_{label}_{ts}.png"
     path = os.path.join(SCREENSHOT_DIR, fname)
     try:
-        subprocess.run(
-            [SCREENCAPTURE, "-x", path],
-            capture_output=True, timeout=10,
-        )
+        # Prefer window-targeted capture (works across Spaces)
+        if _app_window_id:
+            cmd = [SCREENCAPTURE, "-x", "-l", str(_app_window_id), path]
+        else:
+            cmd = [SCREENCAPTURE, "-x", path]
+        subprocess.run(cmd, capture_output=True, timeout=10)
         if os.path.exists(path):
             print(f"  [screenshot] {fname}")
         else:
@@ -117,17 +130,15 @@ def run_applescript(script: str) -> str:
     return result.stdout.strip()
 
 
-def get_window_bounds_quartz(owner_hint: str = "BotOrNot") -> tuple[int, int, int, int] | None:
+def get_window_info_quartz(owner_hint: str = "BotOrNot") -> dict | None:
     """
-    Return (x, y, w, h) of the app window using Quartz CGWindowList.
-    This does NOT require Accessibility permissions.
-    The owner_hint is matched case-insensitively against kCGWindowOwnerName.
-
-    For .NET/Avalonia apps, the process name is usually 'dotnet' and the
-    window title contains the app name, so we also check kCGWindowName.
+    Return dict with keys: x, y, w, h, window_id
+    Searches ALL windows (all Spaces) so we find the app even if it's on a
+    different Space. Uses kCGWindowListOptionAll instead of OnScreenOnly.
     """
+    # Search all windows across all spaces
     windows = Quartz.CGWindowListCopyWindowInfo(
-        Quartz.kCGWindowListOptionOnScreenOnly | Quartz.kCGWindowListExcludeDesktopElements,
+        Quartz.kCGWindowListOptionAll | Quartz.kCGWindowListExcludeDesktopElements,
         Quartz.kCGNullWindowID,
     )
     hint_lower = owner_hint.lower()
@@ -136,7 +147,6 @@ def get_window_bounds_quartz(owner_hint: str = "BotOrNot") -> tuple[int, int, in
         title = (w.get("kCGWindowName") or "").lower()
         layer = w.get("kCGWindowLayer", 0)
 
-        # Skip menu-bar and system layers
         if layer != 0:
             continue
 
@@ -147,20 +157,32 @@ def get_window_bounds_quartz(owner_hint: str = "BotOrNot") -> tuple[int, int, in
                 y = int(b.get("Y", 0))
                 width = int(b.get("Width", 0))
                 height = int(b.get("Height", 0))
-                if width > 100 and height > 100:  # filter out tiny helper windows
-                    return (x, y, width, height)
+                if width > 100 and height > 100:
+                    return {
+                        "x": x, "y": y, "w": width, "h": height,
+                        "window_id": w.get("kCGWindowNumber"),
+                    }
+    return None
+
+
+def get_window_bounds_quartz(owner_hint: str = "BotOrNot") -> tuple[int, int, int, int] | None:
+    info = get_window_info_quartz(owner_hint)
+    if info:
+        return (info["x"], info["y"], info["w"], info["h"])
     return None
 
 
 def wait_for_window(timeout: int = 60) -> tuple[int, int, int, int]:
-    """Block until the app window appears. Returns bounds."""
+    """Block until the app window appears. Returns bounds and stores window ID."""
+    global _app_window_id
     print(f"  Waiting up to {timeout}s for window …")
     deadline = time.time() + timeout
     while time.time() < deadline:
-        bounds = get_window_bounds_quartz()
-        if bounds:
-            print(f"  Window found: pos=({bounds[0]},{bounds[1]}) size=({bounds[2]}x{bounds[3]})")
-            return bounds
+        info = get_window_info_quartz()
+        if info:
+            _app_window_id = info["window_id"]
+            print(f"  Window found: id={_app_window_id} pos=({info['x']},{info['y']}) size=({info['w']}x{info['h']})")
+            return (info["x"], info["y"], info["w"], info["h"])
         time.sleep(1)
     raise TimeoutError("App window did not appear")
 
@@ -186,20 +208,31 @@ def focus_app():
 
 
 def focus_app_by_pid():
-    """Alternative focus using NSRunningApplication (no Accessibility needed)."""
+    """Focus the BotOrNot window aggressively using multiple methods."""
     if not _app_process:
         return
+
+    # Method 1: NSRunningApplication activate
     try:
         from AppKit import NSRunningApplication, NSApplicationActivateIgnoringOtherApps
         app = NSRunningApplication.runningApplicationWithProcessIdentifier_(_app_process.pid)
         if app:
             app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps)
-            time.sleep(0.5)
-            return
+            time.sleep(0.3)
     except Exception:
         pass
-    # Fallback to osascript
+
+    # Method 2: AppleScript frontmost (belt + suspenders)
     focus_app()
+
+    # Method 3: Click the center of the window to ensure it's active
+    info = get_window_info_quartz()
+    if info:
+        center_x = info["x"] + info["w"] // 2
+        center_y = info["y"] + info["h"] // 2
+        # Click on title bar area (safe — won't trigger buttons)
+        pyautogui.click(center_x, info["y"] + 15)
+        time.sleep(0.3)
 
 
 def click_at(x: int, y: int, label: str = ""):
@@ -209,39 +242,56 @@ def click_at(x: int, y: int, label: str = ""):
     time.sleep(0.5)
 
 
-def stitch_video():
-    """If ffmpeg is available, stitch screenshots into a video."""
-    ffmpeg = shutil.which("ffmpeg")
-    if not ffmpeg:
-        print("  ffmpeg not found – skipping video generation")
-        return
-    pngs = sorted(glob.glob(os.path.join(SCREENSHOT_DIR, "*.png")))
-    if len(pngs) < 2:
-        print("  Not enough screenshots for a video")
-        return
-
-    # Create a concat list file
-    list_file = os.path.join(SCREENSHOT_DIR, "frames.txt")
-    with open(list_file, "w") as f:
-        for p in pngs:
-            f.write(f"file '{p}'\n")
-            f.write("duration 1.5\n")
-        # repeat last frame so it shows
-        f.write(f"file '{pngs[-1]}'\n")
-
+def start_recording(crop: dict | None = None) -> str:
+    """Start ffmpeg screen recording. Returns output path.
+    crop: optional dict with x, y, w, h to crop to window bounds."""
+    global _record_process
     out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_run.mp4")
+
+    vf_filters = []
+    if crop:
+        # Ensure even dimensions (required by libx264)
+        cw = crop["w"] if crop["w"] % 2 == 0 else crop["w"] - 1
+        ch = crop["h"] if crop["h"] % 2 == 0 else crop["h"] - 1
+        vf_filters.append(f"crop={cw}:{ch}:{crop['x']}:{crop['y']}")
+        print(f"  Cropping to window: x={crop['x']} y={crop['y']} w={cw} h={ch}")
+
     cmd = [
-        ffmpeg, "-y", "-f", "concat", "-safe", "0",
-        "-i", list_file, "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
-        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "1",
+        FFMPEG, "-y",
+        "-f", "avfoundation",
+        "-framerate", "10",
+        "-i", "0",  # Capture screen 0
+    ]
+    if vf_filters:
+        cmd += ["-vf", ",".join(vf_filters)]
+    cmd += [
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-crf", "28",
+        "-preset", "ultrafast",
         out,
     ]
-    print(f"  Generating video: {out}")
-    subprocess.run(cmd, capture_output=True, timeout=60)
-    if os.path.exists(out):
-        print(f"  Video saved ({os.path.getsize(out)} bytes)")
+    print(f"  Starting screen recording → {out}")
+    _record_process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(1)  # let ffmpeg spin up
+    return out
+
+
+def stop_recording(out_path: str):
+    """Stop ffmpeg recording gracefully."""
+    global _record_process
+    if _record_process and _record_process.poll() is None:
+        print("  Stopping screen recording …")
+        _record_process.terminate()
+        try:
+            _record_process.wait(timeout=15)
+        except subprocess.TimeoutExpired:
+            _record_process.kill()
+        _record_process = None
+    if os.path.exists(out_path):
+        print(f"  Video saved ({os.path.getsize(out_path)} bytes): {out_path}")
     else:
-        print("  Video generation failed (non-fatal)")
+        print("  WARNING: video file not found")
 
 
 # ---------------------------------------------------------------------------
@@ -292,7 +342,7 @@ def main():
     print(f"  PID: {_app_process.pid}")
 
     # ------------------------------------------------------------------
-    # 3. Wait for the window
+    # 3. Wait for the window, then start recording cropped to it
     # ------------------------------------------------------------------
     step("Waiting for app window")
     try:
@@ -319,6 +369,12 @@ def main():
 
     time.sleep(2)  # let the UI finish rendering
     focus_app_by_pid()
+
+    # Start recording NOW, cropped to the window
+    step("Starting screen recording (cropped to window)")
+    wx, wy, ww, wh = bounds
+    video_path = start_recording(crop={"x": wx, "y": wy, "w": ww, "h": wh})
+
     screenshot("app_launched")
 
     # ------------------------------------------------------------------
@@ -370,6 +426,11 @@ def main():
     step("Waiting for replay to load")
     time.sleep(5)  # give it time to parse
     focus_app_by_pid()
+    # Refresh window ID in case it changed after dialog closed
+    info = get_window_info_quartz()
+    if info:
+        _app_window_id = info["window_id"]
+        print(f"  Refreshed window ID: {_app_window_id}")
     screenshot("replay_loaded")
 
     # ------------------------------------------------------------------
@@ -420,10 +481,10 @@ def main():
     screenshot("final_state")
 
     # ------------------------------------------------------------------
-    # 9. Stitch video (optional)
+    # 9. Stop recording
     # ------------------------------------------------------------------
-    step("Generating video from screenshots")
-    stitch_video()
+    step("Stopping screen recording")
+    stop_recording(video_path)
 
     # ------------------------------------------------------------------
     # 10. Exit cleanly
