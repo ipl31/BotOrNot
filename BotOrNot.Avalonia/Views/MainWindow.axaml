@@ -59,7 +59,8 @@
                 BorderThickness="1"
                 Padding="8"
                 Margin="8,0,8,8"
-                Height="80">
+                Height="100">
+            <!-- TODO: Extract hardcoded colors to style resources for dark mode support -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Orientation="Vertical" Spacing="2">
                     <TextBlock Text="{Binding MetadataText}" TextWrapping="Wrap" />
@@ -82,7 +83,6 @@
                                     <Setter Property="Foreground" Value="#005A9E" />
                                 </Style>
                             </Button.Styles>
-                            <!-- TODO: Extract hardcoded colors to style resources for dark mode support -->
                         </Button>
                     </StackPanel>
                 </StackPanel>
