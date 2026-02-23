@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BotOrNot.Core\BotOrNot.Core.csproj" />
+    <ProjectReference Include="..\BotOrNot.Avalonia\BotOrNot.Avalonia.csproj" />
   </ItemGroup>
 
   <ItemGroup>

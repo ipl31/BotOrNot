@@ -18,6 +18,13 @@ public class MainWindowViewModel : ReactiveObject
     private string _playersSeenHeader = "Players Seen";
     private bool _isLoading;
     private string? _errorMessage;
+    private string _filterText = "";
+
+    private readonly List<PlayerRow> _allPlayers = new();
+    private readonly List<PlayerRow> _allOwnerEliminations = new();
+
+    private ObservableCollection<PlayerRow> _filteredPlayers = new();
+    private ObservableCollection<PlayerRow> _filteredOwnerEliminations = new();
 
     public MainWindowViewModel()
     {
@@ -29,19 +36,15 @@ public class MainWindowViewModel : ReactiveObject
             ErrorMessage = $"Failed to load replay: {ex.Message}";
             IsLoading = false;
         });
+
+        // Filter logic - react to filter text changes
+        this.WhenAnyValue(x => x.FilterText)
+            .Subscribe(_ => ApplyFilter());
     }
 
-    public ObservableCollection<PlayerRow> Players
-    {
-        get => _players;
-        set => this.RaiseAndSetIfChanged(ref _players, value);
-    }
+    public ObservableCollection<PlayerRow> Players => _filteredPlayers;
 
-    public ObservableCollection<PlayerRow> OwnerEliminations
-    {
-        get => _ownerEliminations;
-        set => this.RaiseAndSetIfChanged(ref _ownerEliminations, value);
-    }
+    public ObservableCollection<PlayerRow> OwnerEliminations => _filteredOwnerEliminations;
 
     public string OwnerKillsHeader
     {
@@ -73,7 +76,46 @@ public class MainWindowViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _errorMessage, value);
     }
 
+    public string FilterText
+    {
+        get => _filterText;
+        set => this.RaiseAndSetIfChanged(ref _filterText, value);
+    }
+
     public ReactiveCommand<string, Unit> LoadReplayCommand { get; }
+
+    private void ApplyFilter()
+    {
+        if (string.IsNullOrWhiteSpace(FilterText))
+        {
+            _filteredPlayers.Clear();
+            _filteredOwnerEliminations.Clear();
+            foreach (var p in _allPlayers) _filteredPlayers.Add(p);
+            foreach (var p in _allOwnerEliminations) _filteredOwnerEliminations.Add(p);
+        }
+        else
+        {
+            var searchTerm = FilterText.ToLowerInvariant();
+            var filteredPlayersList = _allPlayers.Where(p => MatchesFilter(p, searchTerm)).ToList();
+            var filteredOwnerElimList = _allOwnerEliminations.Where(p => MatchesFilter(p, searchTerm)).ToList();
+
+            _filteredPlayers.Clear();
+            _filteredOwnerEliminations.Clear();
+            foreach (var p in filteredPlayersList) _filteredPlayers.Add(p);
+            foreach (var p in filteredOwnerElimList) _filteredOwnerEliminations.Add(p);
+        }
+    }
+
+    private static bool MatchesFilter(PlayerRow player, string searchTerm)
+    {
+        return (player.Name?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+               (player.Level?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+               (player.Platform?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+               (player.Kills?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+               (player.TeamIndex?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+               (player.Placement?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+               (player.DeathCause?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false);
+    }
 
     private async Task LoadReplayAsync(string path)
     {
@@ -84,8 +126,12 @@ public class MainWindowViewModel : ReactiveObject
         {
             var data = await _replayService.LoadReplayAsync(path);
 
-            Players = new ObservableCollection<PlayerRow>(data.Players);
-            OwnerEliminations = new ObservableCollection<PlayerRow>(data.OwnerEliminations);
+            _allPlayers.Clear();
+            _allOwnerEliminations.Clear();
+            foreach (var p in data.Players) _allPlayers.Add(p);
+            foreach (var p in data.OwnerEliminations) _allOwnerEliminations.Add(p);
+
+            ApplyFilter();
 
             var ownerDisplay = !string.IsNullOrEmpty(data.OwnerName) ? data.OwnerName : "Your";
             // Use authoritative kill count from PlayerData, fall back to event-based count
