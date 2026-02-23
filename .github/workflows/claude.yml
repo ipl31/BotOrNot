@@ -23,7 +23,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check if PR modifies Claude workflow
+        id: check-files
+        if: github.event_name == 'pull_request'
+        run: |
+          # Get list of changed files via GitHub API
+          CHANGED_FILES=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files --jq '.[].filename' | tr '\n' '\n')
+          
+          if echo "$CHANGED_FILES" | grep -q "^\.github/workflows/claude\.yml$"; then
+            echo "modifies_claude_workflow=true" >> $GITHUB_OUTPUT
+            echo "PR modifies Claude workflow - will skip review"
+          else
+            echo "modifies_claude_workflow=false" >> $GITHUB_OUTPUT
+            echo "PR does not modify Claude workflow - will proceed with review"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Post skip notice
+        if: |
+          github.event_name == 'pull_request' &&
+          steps.check-files.outputs.modifies_claude_workflow == 'true'
+        run: |
+          gh pr comment "Claude code review was skipped because we are updating the claude action and claude review requires that the source and target action file are the same. As a result we should try and limit this PR to only changes involving the action so we don't miss any potential bugs." || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: anthropics/claude-code-action@v1
+        if: |
+          github.event_name != 'pull_request' ||
+          steps.check-files.outputs.modifies_claude_workflow == 'false'
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           allowed_tools: "Bash,Read,Write,Glob,Grep"
