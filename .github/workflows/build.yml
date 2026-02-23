@@ -27,3 +27,22 @@ jobs:
 
       - name: Test
         run: dotnet test --configuration Release --no-build --verbosity normal
+
+      - name: Publish Windows x64
+        run: |
+          dotnet publish BotOrNot.Avalonia/BotOrNot.Avalonia.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            --output ./publish/win-x64 `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:DebugType=none `
+            -p:DebugSymbols=false
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BotOrNot-Windows-x64-${{ github.event_name == 'pull_request' && format('pr{0}', github.event.pull_request.number) || github.sha }}
+          path: ./publish/win-x64/
+          retention-days: 7
