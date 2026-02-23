@@ -39,5 +39,5 @@ jobs:
                - Performance issues
 
             Post your review as a comment on the PR using `gh pr comment`.
-          claude_args: "--dangerously-skip-permissions --max-turns 15"
+          claude_args: "--dangerously-skip-permissions --max-turns 3"
           show_full_output: true
