@@ -104,11 +104,9 @@ def screenshot(label: str) -> str:
     fname = f"{_step:02d}_{label}_{ts}.png"
     path = os.path.join(SCREENSHOT_DIR, fname)
     try:
-        # Prefer window-targeted capture (works across Spaces)
-        if _app_window_id:
-            cmd = [SCREENCAPTURE, "-x", "-l", str(_app_window_id), path]
-        else:
-            cmd = [SCREENCAPTURE, "-x", path]
+        # Always use full-screen capture — window-targeted (-l) requires Screen Recording
+        # permission for the specific window ID and can fail silently
+        cmd = [SCREENCAPTURE, "-x", path]
         subprocess.run(cmd, capture_output=True, timeout=10)
         if os.path.exists(path):
             print(f"  [screenshot] {fname}")
@@ -135,29 +133,51 @@ def get_window_info_quartz(owner_hint: str = "BotOrNot") -> dict | None:
     Return dict with keys: x, y, w, h, window_id
     Searches ALL windows (all Spaces) so we find the app even if it's on a
     different Space. Uses kCGWindowListOptionAll instead of OnScreenOnly.
+
+    If _app_window_id is set, prefer matching by window ID for accuracy.
     """
     # Search all windows across all spaces
     windows = Quartz.CGWindowListCopyWindowInfo(
         Quartz.kCGWindowListOptionAll | Quartz.kCGWindowListExcludeDesktopElements,
         Quartz.kCGNullWindowID,
     )
-    hint_lower = owner_hint.lower()
+
+    # If we have a known window ID, prefer that for re-queries
+    if _app_window_id:
+        for w in windows:
+            if w.get("kCGWindowNumber") == _app_window_id:
+                b = w.get("kCGWindowBounds")
+                if b:
+                    width = int(b.get("Width", 0))
+                    height = int(b.get("Height", 0))
+                    if width > 200 and height > 200:
+                        return {
+                            "x": int(b.get("X", 0)),
+                            "y": int(b.get("Y", 0)),
+                            "w": width,
+                            "h": height,
+                            "window_id": _app_window_id,
+                        }
+
+    # Fall back to name-based search (used during initial discovery)
     for w in windows:
-        owner = (w.get("kCGWindowOwnerName") or "").lower()
+        # Must be owned by BotOrNot process exactly
+        owner = (w.get("kCGWindowOwnerName") or "")
         title = (w.get("kCGWindowName") or "").lower()
         layer = w.get("kCGWindowLayer", 0)
 
         if layer != 0:
             continue
 
-        if hint_lower in owner or hint_lower in title or "bot or not" in title:
+        if owner == "BotOrNot" or "bot or not" in title:
             b = w.get("kCGWindowBounds")
             if b:
                 x = int(b.get("X", 0))
                 y = int(b.get("Y", 0))
                 width = int(b.get("Width", 0))
                 height = int(b.get("Height", 0))
-                if width > 100 and height > 100:
+                # Must be a real app window (not a menu bar strip or tiny overlay)
+                if width > 200 and height > 200:
                     return {
                         "x": x, "y": y, "w": width, "h": height,
                         "window_id": w.get("kCGWindowNumber"),
@@ -173,16 +193,21 @@ def get_window_bounds_quartz(owner_hint: str = "BotOrNot") -> tuple[int, int, in
 
 
 def wait_for_window(timeout: int = 60) -> tuple[int, int, int, int]:
-    """Block until the app window appears. Returns bounds and stores window ID."""
+    """Block until the app window appears at its real size. Returns bounds and stores window ID."""
     global _app_window_id
     print(f"  Waiting up to {timeout}s for window …")
     deadline = time.time() + timeout
     while time.time() < deadline:
         info = get_window_info_quartz()
         if info:
-            _app_window_id = info["window_id"]
-            print(f"  Window found: id={_app_window_id} pos=({info['x']},{info['y']}) size=({info['w']}x{info['h']})")
-            return (info["x"], info["y"], info["w"], info["h"])
+            # Wait for the window to reach a real layout size (Avalonia starts at ~500x500)
+            # Real window is typically 800x600 or larger
+            if info["w"] >= 600 and info["h"] >= 400:
+                _app_window_id = info["window_id"]
+                print(f"  Window found: id={_app_window_id} pos=({info['x']},{info['y']}) size=({info['w']}x{info['h']})")
+                return (info["x"], info["y"], info["w"], info["h"])
+            else:
+                print(f"  Window at placeholder size ({info['w']}x{info['h']}), waiting for layout…")
         time.sleep(1)
     raise TimeoutError("App window did not appear")
 
@@ -209,8 +234,8 @@ def focus_app():
 
 def move_window_to_current_space(x: int = 100, y: int = 100):
     """
-    Bring the BotOrNot window to the current Space, raise it above all other windows,
-    and maximize it so it fills the screen.
+    Bring the BotOrNot window to the current Space and raise it above all other windows.
+    Does NOT maximize — keeps the window at its natural size so coordinate tracking works.
     """
     if not _app_process:
         return
@@ -234,16 +259,6 @@ end tell
         print(f"  [move_window] AppleScript error: {result.stderr.strip()}")
     else:
         print(f"  Window raised to front")
-
-    # Maximize via double-clicking the title bar (zoom)
-    time.sleep(0.3)
-    info = get_window_info_quartz()
-    if info:
-        # Double-click title bar to zoom/maximize
-        title_x = info["x"] + info["w"] // 2
-        title_y = info["y"] + 15
-        pyautogui.doubleClick(title_x, title_y)
-        print(f"  Window maximized")
     time.sleep(0.5)
 
 
@@ -413,17 +428,17 @@ def main():
 
     time.sleep(2)  # let the UI finish rendering
 
-    # Move window to a known position on the current Space so clicks land correctly
-    WINDOW_X, WINDOW_Y = 100, 50
-    move_window_to_current_space(x=WINDOW_X, y=WINDOW_Y)
-    time.sleep(0.5)
+    # Try to raise/focus the window (best-effort; AppleScript may fail for dotnet)
+    move_window_to_current_space()
+    time.sleep(1.5)
 
-    # Re-fetch bounds after maximize
-    time.sleep(0.8)
+    # Always re-query the ACTUAL window position fresh — never trust stale bounds
     info = get_window_info_quartz()
     if info:
         bounds = (info["x"], info["y"], info["w"], info["h"])
         print(f"  Window at: {bounds}")
+    else:
+        print(f"  WARNING: could not re-query window bounds, using initial: {bounds}")
 
     focus_app_by_pid()
 
@@ -437,14 +452,21 @@ def main():
     # 4. Click "Select Replay File" button
     # ------------------------------------------------------------------
     step("Clicking 'Select Replay File' button")
-    focus_app_by_pid()
+
+    # Get bounds BEFORE focusing (focus can temporarily confuse Quartz)
+    info = get_window_info_quartz()
+    if info:
+        bounds = (info["x"], info["y"], info["w"], info["h"])
+        print(f"  Fresh window bounds: {bounds}")
     wx, wy, ww, wh = bounds
+    focus_app_by_pid()
+    time.sleep(0.5)
 
     # The button is near the top of the window. Avalonia on macOS has a
     # title-bar of ~28px.  The toolbar area with the button is just below.
     # The button "Select Replay File" is on the left side of the toolbar.
-    btn_x = wx + 100
-    btn_y = wy + 50
+    btn_x = wx + 148   # "Select Replay File" button center (~148px from left edge)
+    btn_y = wy + 50    # toolbar row, ~50px below window top
     click_at(btn_x, btn_y, "Select Replay File area")
     time.sleep(2)
     screenshot("after_button_click")
@@ -483,10 +505,12 @@ def main():
     time.sleep(5)  # give it time to parse
     focus_app_by_pid()
     # Refresh window ID in case it changed after dialog closed
+    # Clear the cached ID first to force a name-based search
+    _app_window_id = None
     info = get_window_info_quartz()
     if info:
         _app_window_id = info["window_id"]
-        print(f"  Refreshed window ID: {_app_window_id}")
+        print(f"  Refreshed window ID: {_app_window_id} bounds=({info['x']},{info['y']},{info['w']},{info['h']})")
     screenshot("replay_loaded")
 
     # ------------------------------------------------------------------
@@ -494,17 +518,25 @@ def main():
     # ------------------------------------------------------------------
     step("Testing column header sorting")
 
-    # Re-focus and re-fetch bounds
+    # Query window bounds BEFORE focusing (focus can temporarily confuse Quartz)
+    info = get_window_info_quartz()
+    if info:
+        wx, wy, ww, wh = (info["x"], info["y"], info["w"], info["h"])
+        print(f"  Window bounds for sorting: ({wx}, {wy}, {ww}, {wh})")
+    else:
+        print(f"  WARNING: could not re-query bounds, using last known: {(wx, wy, ww, wh)}")
     focus_app_by_pid()
-    new_bounds = get_window_bounds_quartz()
-    if new_bounds:
-        wx, wy, ww, wh = new_bounds
-        print(f"  Window bounds for sorting: {new_bounds}")
 
-    # The DataGrid starts below the metadata panel.  Based on the AXAML,
-    # the top area has about ~180-200px of metadata + tabs. Column headers
-    # sit just below that. We'll estimate the header row Y position.
-    header_y = wy + 200
+    # The DataGrid in "Players Seen" starts below:
+    #   - Title bar (~28px)
+    #   - Toolbar row (~60px)
+    #   - File info/metadata panel (~75px)
+    #   - "ModPackDad's Eliminations" section header (~25px)
+    #   - Column headers + 6 data rows (~240px)
+    #   - "Players Seen" section header (~30px)
+    #   - Column header row
+    # Measured from actual screenshot: Players Seen column header is ~465px from window top
+    header_y = wy + 465
 
     # Column approximate X offsets within the window (from the AXAML widths):
     #   Name(195) | Level(104) | Bot(78) | Platform(130) | Kills(91) | Squad(70) | Placement(90) | Death Cause(156)
