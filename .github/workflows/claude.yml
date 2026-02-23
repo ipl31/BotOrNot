@@ -33,5 +33,5 @@ jobs:
             2. Potential bugs or logic errors
             3. Security vulnerabilities
             4. Performance issues
-          claude_args: "--max-turns 5"
+          claude_args: "--dangerously-skip-permissions --max-turns 5"
           show_full_output: true
