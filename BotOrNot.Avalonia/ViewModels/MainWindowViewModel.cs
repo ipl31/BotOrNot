@@ -187,6 +187,9 @@ public class MainWindowViewModel : ReactiveObject
                 : "Placement: Unknown";
 
             // Extract eliminator name for clickable link (only when we know they didn't win)
+            // Note: Only shows eliminator when owner placement is known (not null).
+            // Original behavior showed eliminator even when placement was unknown; this change
+            // is intentional to avoid showing misleading information when owner wasn't found.
             EliminatorName = ownerPlacement is not null and not "1" && data.OwnerEliminatedBy != null
                 ? data.OwnerEliminatedBy
                 : null;
