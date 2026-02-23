@@ -186,19 +186,15 @@ public class MainWindowViewModel : ReactiveObject
                 ? $"Placement: #{ownerPlacement}"
                 : "Placement: Unknown";
 
-            // Extract eliminator name for clickable link
-            EliminatorName = ownerPlacement != "1" && data.OwnerEliminatedBy != null
+            // Extract eliminator name for clickable link (only when we know they didn't win)
+            EliminatorName = ownerPlacement is not null and not "1" && data.OwnerEliminatedBy != null
                 ? data.OwnerEliminatedBy
                 : null;
-
-            var eliminatedByText = EliminatorName != null
-                ? $" | Eliminated by: "
-                : "";
 
             MetadataText = $"File: {data.Metadata.FileName}\n" +
                           $"Mode: {data.Metadata.GameMode}\n" +
                           $"Playlist Name: {data.Metadata.Playlist}\n" +
-                          $"Duration: {data.Metadata.MatchDurationMinutes:F1} minutes | {placementText}{eliminatedByText}\n" +
+                          $"Duration: {data.Metadata.MatchDurationMinutes:F1} minutes | {placementText}\n" +
                           $"Players: {data.Metadata.PlayerCount}" + (data.Metadata.MaxPlayers.HasValue ? $" (Max: {data.Metadata.MaxPlayers})" : "") + "\n" +
                           $"Eliminations (in replay): {data.Metadata.EliminationCount}";
         }
