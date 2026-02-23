@@ -46,3 +46,46 @@ jobs:
           name: BotOrNot-Windows-x64-${{ github.event_name == 'pull_request' && format('pr{0}', github.event.pull_request.number) || github.sha }}
           path: ./publish/win-x64/
           retention-days: 7
+
+      - name: Comment PR with artifact link
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const artifactName = `BotOrNot-Windows-x64-pr${context.issue.number}`;
+            const artifactUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/artifacts`;
+
+            // Find existing comments by this bot
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('## Build Artifacts')
+            );
+
+            const commentBody = `## Build Artifacts\n\n` +
+              `📦 **Windows x64**: [${artifactName}](${artifactUrl})\n\n` +
+              `> _This comment is updated automatically when the PR builds._`;
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            }
