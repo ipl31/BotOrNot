@@ -53,13 +53,41 @@
         </Border>
 
         <!-- Metadata Box -->
-        <TextBox Grid.Row="1"
-                 Text="{Binding MetadataText}"
-                 IsReadOnly="True"
-                 AcceptsReturn="True"
-                 Height="80"
-                 Margin="8,0,8,8"
-                 ScrollViewer.VerticalScrollBarVisibility="Auto" />
+        <Border Grid.Row="1"
+                Background="#F5F5F5"
+                BorderBrush="#CCCCCC"
+                BorderThickness="1"
+                Padding="8"
+                Margin="8,0,8,8"
+                Height="100">
+            <!-- TODO: Extract hardcoded colors to style resources for dark mode support -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Orientation="Vertical" Spacing="2">
+                    <TextBlock Text="{Binding MetadataText}" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" IsVisible="{Binding EliminatorName, Converter={x:Static ObjectConverters.IsNotNull}}">
+                        <TextBlock Text=" | Eliminated by: " VerticalAlignment="Center" />
+                        <Button Content="{Binding EliminatorName}"
+                                Command="{Binding FilterByPlayerCommand}"
+                                CommandParameter="{Binding EliminatorName}"
+                                Padding="4,2"
+                                FontSize="12"
+                                Background="Transparent"
+                                BorderBrush="#0078D4"
+                                BorderThickness="1"
+                                CornerRadius="3"
+                                Foreground="#0078D4">
+                            <Button.Styles>
+                                <Style Selector="Button:pointerover">
+                                    <Setter Property="Background" Value="#E6F2FF" />
+                                    <Setter Property="BorderBrush" Value="#005A9E" />
+                                    <Setter Property="Foreground" Value="#005A9E" />
+                                </Style>
+                            </Button.Styles>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
 
         <!-- Filter Box -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="8,8,8,4" Spacing="8">
