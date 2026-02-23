@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotOrNot.Avalonia", "BotOrN
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotOrNot.Tests", "BotOrNot.Tests\BotOrNot.Tests.csproj", "{FC3C993A-AAE6-43EC-8403-8F901B98AF5E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotOrNot.UITests", "BotOrNot.UITests\BotOrNot.UITests.csproj", "{8B081185-C980-4292-9688-B5A5620FE6C8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,6 +54,18 @@ Global
 		{FC3C993A-AAE6-43EC-8403-8F901B98AF5E}.Release|x64.Build.0 = Release|Any CPU
 		{FC3C993A-AAE6-43EC-8403-8F901B98AF5E}.Release|x86.ActiveCfg = Release|Any CPU
 		{FC3C993A-AAE6-43EC-8403-8F901B98AF5E}.Release|x86.Build.0 = Release|Any CPU
+		{8B081185-C980-4292-9688-B5A5620FE6C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B081185-C980-4292-9688-B5A5620FE6C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B081185-C980-4292-9688-B5A5620FE6C8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8B081185-C980-4292-9688-B5A5620FE6C8}.Debug|x64.Build.0 = Debug|Any CPU
+		{8B081185-C980-4292-9688-B5A5620FE6C8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8B081185-C980-4292-9688-B5A5620FE6C8}.Debug|x86.Build.0 = Debug|Any CPU
+		{8B081185-C980-4292-9688-B5A5620FE6C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B081185-C980-4292-9688-B5A5620FE6C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B081185-C980-4292-9688-B5A5620FE6C8}.Release|x64.ActiveCfg = Release|Any CPU
+		{8B081185-C980-4292-9688-B5A5620FE6C8}.Release|x64.Build.0 = Release|Any CPU
+		{8B081185-C980-4292-9688-B5A5620FE6C8}.Release|x86.ActiveCfg = Release|Any CPU
+		{8B081185-C980-4292-9688-B5A5620FE6C8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

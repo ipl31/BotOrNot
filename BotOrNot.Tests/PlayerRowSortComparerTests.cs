@@ -192,6 +192,56 @@ public class PlayerRowSortComparerTests
         Assert.That(sorted, Is.EqualTo(new[] { "2", "5", "10" }));
     }
 
+    // --- Unknowns-first for non-numeric fields ---
+
+    [Test]
+    public void UnknownsFirst_String_PushesNullsToTop()
+    {
+        var comparer = new PlayerRowSortComparer(p => p.Name, descending: false, unknownsFirst: true);
+        var rows = new[]
+        {
+            Row(name: "Charlie"), Row(name: null), Row(name: "Alice"), Row(name: "Bob")
+        };
+
+        var sorted = rows.OrderBy(r => r, comparer).Select(r => r.Name).ToList();
+
+        Assert.That(sorted, Is.EqualTo(new[] { null, "Alice", "Bob", "Charlie" }));
+    }
+
+    [Test]
+    public void UnknownsFirst_Bot_PushesUnknownsToTop()
+    {
+        var comparer = new PlayerRowSortComparer(p => p.Bot, descending: false, isBotField: true, unknownsFirst: true);
+        var rows = new[]
+        {
+            Row(bot: "false"), Row(bot: "unknown"), Row(bot: "true"), Row(bot: null)
+        };
+
+        var sorted = rows.OrderBy(r => r, comparer).Select(r => r.Bot).ToList();
+
+        Assert.That(sorted[0], Is.AnyOf("unknown", null));
+        Assert.That(sorted[1], Is.AnyOf("unknown", null));
+        Assert.That(sorted[2], Is.EqualTo("true"));
+        Assert.That(sorted[3], Is.EqualTo("false"));
+    }
+
+    [Test]
+    public void UnknownsFirst_String_Descending_StillPushesNullsToTop()
+    {
+        var comparer = new PlayerRowSortComparer(p => p.Name, descending: true, unknownsFirst: true);
+        var rows = new[]
+        {
+            Row(name: "Charlie"), Row(name: null), Row(name: "Alice"), Row(name: "Bob")
+        };
+
+        var sorted = rows.OrderBy(r => r, new NegatingComparer(comparer)).Select(r => r.Name).ToList();
+
+        Assert.That(sorted[0], Is.EqualTo(null));
+        Assert.That(sorted[1], Is.EqualTo("Charlie"));
+        Assert.That(sorted[2], Is.EqualTo("Bob"));
+        Assert.That(sorted[3], Is.EqualTo("Alice"));
+    }
+
     // --- String sorting ---
 
     [Test]
