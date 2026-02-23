@@ -83,7 +83,7 @@
                 <DataGridTextColumn Header="Id" Binding="{Binding Id}" Width="364" IsVisible="False" />
                 <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="195" />
                 <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="104" />
-                <DataGridTemplateColumn Header="Bot" Width="78">
+                <DataGridTemplateColumn Header="Bot" Width="78" CanUserSort="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="models:PlayerRow">
                             <Ellipse Width="14" Height="14"
@@ -127,7 +127,7 @@
                 <DataGridTextColumn Header="Id" Binding="{Binding Id}" Width="364" IsVisible="False" />
                 <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="195" />
                 <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="104" />
-                <DataGridTemplateColumn Header="Bot" Width="78">
+                <DataGridTemplateColumn Header="Bot" Width="78" CanUserSort="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="models:PlayerRow">
                             <Ellipse Width="14" Height="14"

@@ -1,0 +1,4 @@
+screenshots/
+*.mp4
+frames.txt
+__pycache__/

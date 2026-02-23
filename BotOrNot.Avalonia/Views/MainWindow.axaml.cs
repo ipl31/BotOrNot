@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using BotOrNot.Avalonia.ViewModels;
+using BotOrNot.Core.Models;
 using ReactiveUI;
 
 namespace BotOrNot.Avalonia.Views;
@@ -12,6 +13,11 @@ public partial class MainWindow : Window
 {
     private readonly MainWindowViewModel _viewModel;
     private readonly MenuFlyout _columnsFlyout;
+    // For numeric columns: 0 = desc (high→low, unknowns bottom),
+    //                       1 = asc  (low→high, unknowns bottom),
+    //                       2 = unknowns-first
+    // For non-numeric columns: 0 = asc, 1 = desc (standard 2-mode)
+    private readonly Dictionary<DataGridColumn, int> _columnSortMode = new();
     private DataGrid? _playersGrid;
     private Button? _columnsButton;
 
@@ -32,8 +38,63 @@ public partial class MainWindow : Window
             _columnsButton.Flyout = _columnsFlyout;
         }
 
+        // Wire up custom sorting on both grids
+        var ownerGrid = this.FindControl<DataGrid>("OwnerEliminationsGrid");
+        if (ownerGrid != null) ownerGrid.Sorting += OnDataGridSorting;
+        if (_playersGrid != null) _playersGrid.Sorting += OnDataGridSorting;
+
         // Build the columns menu when the window loads
         Loaded += (_, _) => BuildColumnsFlyout();
+    }
+
+    private void OnDataGridSorting(object? sender, DataGridColumnEventArgs e)
+    {
+        var (selector, numeric, bot) = GetColumnSortInfo(e.Column);
+        if (selector == null) return;
+
+        _columnSortMode.TryGetValue(e.Column, out var currentMode);
+        int nextMode;
+        int totalModes = numeric ? 3 : 2;
+        nextMode = (currentMode + 1) % totalModes;
+        _columnSortMode[e.Column] = nextMode;
+
+        if (numeric)
+        {
+            // Mode 0: desc (high→low), unknowns bottom
+            // Mode 1: asc (low→high), unknowns bottom
+            // Mode 2: unknowns first, numeric values after
+            var descending = nextMode == 0;
+            var unknownsFirst = nextMode == 2;
+            e.Column.CustomSortComparer = new PlayerRowSortComparer(
+                selector, descending: descending, numeric: true, unknownsFirst: unknownsFirst);
+        }
+        else
+        {
+            // Standard 2-mode: mode 0 = asc, mode 1 = desc
+            var descending = nextMode == 1;
+            e.Column.CustomSortComparer = new PlayerRowSortComparer(
+                selector, descending: descending, numeric: false, isBotField: bot);
+        }
+    }
+
+    private static (Func<PlayerRow, string?>? selector, bool numeric, bool bot) GetColumnSortInfo(
+        DataGridColumn column)
+    {
+        return column.Header?.ToString() switch
+        {
+            "Id" => (p => p.Id, false, false),
+            "Name" => (p => p.Name, false, false),
+            "Level" => (p => p.Level, true, false),
+            "Bot" => (p => p.Bot, false, true),
+            "Platform" => (p => p.Platform, false, false),
+            "Kills" => (p => p.Kills, true, false),
+            "Squad" => (p => p.TeamIndex, true, false),
+            "Placement" => (p => p.Placement, true, false),
+            "Death Cause" => (p => p.DeathCause, false, false),
+            "Pickaxe" => (p => p.Pickaxe, false, false),
+            "Glider" => (p => p.Glider, false, false),
+            _ => (null, false, false)
+        };
     }
 
     private async void OpenReplay_Click(object? sender, RoutedEventArgs e)
