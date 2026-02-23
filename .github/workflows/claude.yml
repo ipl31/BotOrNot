@@ -28,10 +28,16 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           allowed_tools: "Bash,Read,Write,Glob,Grep"
           prompt: |
-            Review this PR focusing on:
-            1. Code quality and best practices
-            2. Potential bugs or logic errors
-            3. Security vulnerabilities
-            4. Performance issues
-          claude_args: "--dangerously-skip-permissions --max-turns 5"
+            Using your available tools (Read, Glob, Grep, Bash), review this pull request:
+
+            1. Use `gh pr view` to get PR details (title, body, files changed)
+            2. Read the files that were changed
+            3. Analyze for:
+               - Code quality and best practices
+               - Potential bugs or logic errors
+               - Security vulnerabilities
+               - Performance issues
+
+            Post your review as a comment on the PR using `gh pr comment`.
+          claude_args: "--dangerously-skip-permissions --max-turns 15"
           show_full_output: true
