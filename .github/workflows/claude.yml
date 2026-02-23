@@ -27,7 +27,9 @@ jobs:
         id: check-files
         if: github.event_name == 'pull_request'
         run: |
-          CHANGED_FILES=$(gh pr diff --name-only)
+          # Get list of changed files via GitHub API
+          CHANGED_FILES=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files --jq '.[].filename' | tr '\n' '\n')
+          
           if echo "$CHANGED_FILES" | grep -q "^\.github/workflows/claude\.yml$"; then
             echo "modifies_claude_workflow=true" >> $GITHUB_OUTPUT
             echo "PR modifies Claude workflow - will skip review"
