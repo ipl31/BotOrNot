@@ -26,6 +26,8 @@ public class MainWindowViewModel : ReactiveObject
     private ObservableCollection<PlayerRow> _filteredPlayers = new();
     private ObservableCollection<PlayerRow> _filteredOwnerEliminations = new();
 
+    private string? _eliminatorName;
+
     public MainWindowViewModel()
     {
         _replayService = new ReplayService();
@@ -36,6 +38,8 @@ public class MainWindowViewModel : ReactiveObject
             ErrorMessage = $"Failed to load replay: {ex.Message}";
             IsLoading = false;
         });
+
+        FilterByPlayerCommand = ReactiveCommand.Create<string>(FilterByPlayer);
 
         // Filter logic - react to filter text changes
         this.WhenAnyValue(x => x.FilterText)
@@ -83,6 +87,19 @@ public class MainWindowViewModel : ReactiveObject
     }
 
     public ReactiveCommand<string, Unit> LoadReplayCommand { get; }
+
+    public string? EliminatorName
+    {
+        get => _eliminatorName;
+        set => this.RaiseAndSetIfChanged(ref _eliminatorName, value);
+    }
+
+    public ReactiveCommand<string, Unit> FilterByPlayerCommand { get; }
+
+    private void FilterByPlayer(string playerName)
+    {
+        FilterText = playerName;
+    }
 
     private void ApplyFilter()
     {
@@ -169,8 +186,13 @@ public class MainWindowViewModel : ReactiveObject
                 ? $"Placement: #{ownerPlacement}"
                 : "Placement: Unknown";
 
-            var eliminatedByText = ownerPlacement != "1" && data.OwnerEliminatedBy != null
-                ? $" | Eliminated by: {data.OwnerEliminatedBy}"
+            // Extract eliminator name for clickable link
+            EliminatorName = ownerPlacement != "1" && data.OwnerEliminatedBy != null
+                ? data.OwnerEliminatedBy
+                : null;
+
+            var eliminatedByText = EliminatorName != null
+                ? $" | Eliminated by: "
                 : "";
 
             MetadataText = $"File: {data.Metadata.FileName}\n" +
