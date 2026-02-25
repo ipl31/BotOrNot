@@ -128,6 +128,7 @@ public class MainWindowViewModel : ReactiveObject
         return (player.Name?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
                (player.Level?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
                (player.Platform?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+               PlatformHelper.GetFriendlyName(player.Platform).Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
                (player.Kills?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
                (player.TeamIndex?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
                (player.Placement?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
