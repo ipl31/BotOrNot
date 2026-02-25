@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics;
 using System.Reactive.Linq;
 using Avalonia.Collections;
 using Avalonia.Controls;
@@ -192,6 +193,19 @@ public partial class MainWindow : Window
         {
             _viewModel.ErrorMessage = $"Failed to load replay: {ex.Message} (The file may still be locked by Fortnite.)";
             _viewModel.IsLoading = false;
+        }
+    }
+
+    private void OpenFortniteTracker_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: PlayerRow player } && !string.IsNullOrEmpty(player.Name))
+        {
+            var encodedName = Uri.EscapeDataString(player.Name);
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = $"https://fortnitetracker.com/profile/all/{encodedName}",
+                UseShellExecute = true
+            });
         }
     }
 

@@ -13,12 +13,18 @@ public class MainWindowViewModel : ReactiveObject
 
     private ObservableCollection<PlayerRow> _players = new();
     private ObservableCollection<PlayerRow> _ownerEliminations = new();
-    private string _metadataText = "";
     private string _ownerKillsHeader = "Your Eliminations";
     private string _playersSeenHeader = "Players Seen";
     private bool _isLoading;
     private string? _errorMessage;
     private string _filterText = "";
+    private string _windowTitle = "Bot or Not?";
+    private string? _gameMode;
+    private string? _placementText;
+    private string? _durationText;
+    private string? _elimsSummary;
+    private string? _playlistName;
+    private bool _hasMetadata;
 
     private readonly List<PlayerRow> _allPlayers = new();
     private readonly List<PlayerRow> _allOwnerEliminations = new();
@@ -62,10 +68,46 @@ public class MainWindowViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _playersSeenHeader, value);
     }
 
-    public string MetadataText
+    public string WindowTitle
     {
-        get => _metadataText;
-        set => this.RaiseAndSetIfChanged(ref _metadataText, value);
+        get => _windowTitle;
+        set => this.RaiseAndSetIfChanged(ref _windowTitle, value);
+    }
+
+    public string? GameMode
+    {
+        get => _gameMode;
+        set => this.RaiseAndSetIfChanged(ref _gameMode, value);
+    }
+
+    public string? PlaylistName
+    {
+        get => _playlistName;
+        set => this.RaiseAndSetIfChanged(ref _playlistName, value);
+    }
+
+    public string? PlacementText
+    {
+        get => _placementText;
+        set => this.RaiseAndSetIfChanged(ref _placementText, value);
+    }
+
+    public string? DurationText
+    {
+        get => _durationText;
+        set => this.RaiseAndSetIfChanged(ref _durationText, value);
+    }
+
+    public string? ElimsSummary
+    {
+        get => _elimsSummary;
+        set => this.RaiseAndSetIfChanged(ref _elimsSummary, value);
+    }
+
+    public bool HasMetadata
+    {
+        get => _hasMetadata;
+        set => this.RaiseAndSetIfChanged(ref _hasMetadata, value);
     }
 
     public bool IsLoading
@@ -98,7 +140,7 @@ public class MainWindowViewModel : ReactiveObject
 
     private void FilterByPlayer(string playerName)
     {
-        FilterText = playerName;
+        FilterText = FilterText.Equals(playerName, StringComparison.OrdinalIgnoreCase) ? "" : playerName;
     }
 
     private void ApplyFilter()
@@ -194,12 +236,14 @@ public class MainWindowViewModel : ReactiveObject
                 ? data.OwnerEliminatedBy
                 : null;
 
-            MetadataText = $"File: {data.Metadata.FileName}\n" +
-                          $"Mode: {data.Metadata.GameMode}\n" +
-                          $"Playlist Name: {data.Metadata.Playlist}\n" +
-                          $"Duration: {data.Metadata.MatchDurationMinutes:F1} minutes | {placementText}\n" +
-                          $"Players: {data.Metadata.PlayerCount}" + (data.Metadata.MaxPlayers.HasValue ? $" (Max: {data.Metadata.MaxPlayers})" : "") + "\n" +
-                          $"Eliminations (in replay): {data.Metadata.EliminationCount}";
+            // Set individual header bar segments
+            WindowTitle = $"Bot or Not? - {data.Metadata.FileName}";
+            GameMode = data.Metadata.GameMode;
+            PlaylistName = data.Metadata.Playlist;
+            PlacementText = !string.IsNullOrEmpty(ownerPlacement) ? $"#{ownerPlacement}" : "?";
+            DurationText = $"{data.Metadata.MatchDurationMinutes:F1}m";
+            ElimsSummary = $"{totalKills} Elims ({botKills} Bot{(botKills != 1 ? "s" : "")})";
+            HasMetadata = true;
         }
         catch (IOException ex)
         {
