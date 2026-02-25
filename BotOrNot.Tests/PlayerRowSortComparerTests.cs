@@ -27,15 +27,13 @@ public class PlayerRowSortComparerTests
     [Test]
     public void Numeric_Descending_SortsAsIntegers()
     {
-        // Simulate what the DataGrid does: use comparer then negate for descending
         var comparer = new PlayerRowSortComparer(p => p.Kills, descending: true, numeric: true);
         var rows = new[]
         {
             Row(kills: "10"), Row(kills: "2"), Row(kills: "9"), Row(kills: "1"), Row(kills: "20")
         };
 
-        // DataGrid negates the result for descending, so we simulate that here
-        var sorted = rows.OrderBy(r => r, new NegatingComparer(comparer)).Select(r => r.Kills).ToList();
+        var sorted = rows.OrderBy(r => r, comparer).Select(r => r.Kills).ToList();
 
         Assert.That(sorted, Is.EqualTo(new[] { "20", "10", "9", "2", "1" }));
     }
@@ -65,8 +63,7 @@ public class PlayerRowSortComparerTests
             Row(kills: "unknown"), Row(kills: "5"), Row(kills: "1"), Row(kills: null), Row(kills: "10")
         };
 
-        // Simulate DataGrid's descending negation
-        var sorted = rows.OrderBy(r => r, new NegatingComparer(comparer)).Select(r => r.Kills).ToList();
+        var sorted = rows.OrderBy(r => r, comparer).Select(r => r.Kills).ToList();
 
         // Known values descending, then Unknown/null at bottom
         Assert.That(sorted[0], Is.EqualTo("10"));
@@ -131,7 +128,7 @@ public class PlayerRowSortComparerTests
             Row(bot: "unknown"), Row(bot: "false"), Row(bot: "true"), Row(bot: null)
         };
 
-        var sorted = rows.OrderBy(r => r, new NegatingComparer(comparer)).Select(r => r.Bot).ToList();
+        var sorted = rows.OrderBy(r => r, comparer).Select(r => r.Bot).ToList();
 
         Assert.That(sorted[0], Is.EqualTo("false"));
         Assert.That(sorted[1], Is.EqualTo("true"));
@@ -170,12 +167,14 @@ public class PlayerRowSortComparerTests
             Row(kills: "5"), Row(kills: "unknown"), Row(kills: "1"), Row(kills: null), Row(kills: "10")
         };
 
-        // Simulate DataGrid's descending negation
-        var sorted = rows.OrderBy(r => r, new NegatingComparer(comparer)).Select(r => r.Kills).ToList();
+        var sorted = rows.OrderBy(r => r, comparer).Select(r => r.Kills).ToList();
 
-        // Unknowns first, then numeric values (descending since DataGrid negates)
+        // Unknowns first, then numeric values descending
         Assert.That(sorted[0], Is.AnyOf("unknown", null));
         Assert.That(sorted[1], Is.AnyOf("unknown", null));
+        Assert.That(sorted[2], Is.EqualTo("10"));
+        Assert.That(sorted[3], Is.EqualTo("5"));
+        Assert.That(sorted[4], Is.EqualTo("1"));
     }
 
     [Test]
@@ -234,7 +233,7 @@ public class PlayerRowSortComparerTests
             Row(name: "Charlie"), Row(name: null), Row(name: "Alice"), Row(name: "Bob")
         };
 
-        var sorted = rows.OrderBy(r => r, new NegatingComparer(comparer)).Select(r => r.Name).ToList();
+        var sorted = rows.OrderBy(r => r, comparer).Select(r => r.Name).ToList();
 
         Assert.That(sorted[0], Is.EqualTo(null));
         Assert.That(sorted[1], Is.EqualTo("Charlie"));
@@ -298,14 +297,5 @@ public class PlayerRowSortComparerTests
         var b = Row(kills: "10");
 
         Assert.That(comparer.Compare(a, b), Is.LessThan(0));
-    }
-
-    /// <summary>
-    /// Simulates the DataGrid's descending behavior: it negates
-    /// the comparer's result to reverse the sort order.
-    /// </summary>
-    private sealed class NegatingComparer(IComparer<PlayerRow> inner) : IComparer<PlayerRow>
-    {
-        public int Compare(PlayerRow? x, PlayerRow? y) => -inner.Compare(x, y);
     }
 }

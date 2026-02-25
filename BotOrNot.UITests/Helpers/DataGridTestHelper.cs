@@ -52,10 +52,8 @@ public static class DataGridTestHelper
     /// 1. Firing the DataGrid's Sorting event (which sets CustomSortComparer on the column)
     /// 2. Applying the sort via the CollectionView's SortDescriptions
     ///
-    /// The comparer created by the MainWindow's Sorting handler is designed for the
-    /// DataGrid's internal sort, which negates comparison results for descending sort.
-    /// Since we apply sorting via SortDescriptions (always ascending), we detect
-    /// descending comparers and wrap them in a negating adapter to produce the correct order.
+    /// The comparer is self-contained and returns the final desired order directly,
+    /// so it's passed to SortDescriptions as-is (no negation needed).
     /// </summary>
     public static void ClickColumnHeader(Window window, DataGrid dataGrid, string headerText)
     {
@@ -77,13 +75,7 @@ public static class DataGridTestHelper
             var cv = dataGrid.CollectionView;
             if (cv != null)
             {
-                // Check if the comparer is in descending mode (pre-inverted for DataGrid negation)
-                var isDescending = IsComparerDescending(column.CustomSortComparer);
-                IComparer comparer = isDescending
-                    ? new NegatingComparer(column.CustomSortComparer)
-                    : (IComparer)column.CustomSortComparer;
-
-                var sd = DataGridSortDescription.FromComparer(comparer);
+                var sd = DataGridSortDescription.FromComparer(column.CustomSortComparer);
                 cv.SortDescriptions.Clear();
                 cv.SortDescriptions.Add(sd);
             }
@@ -101,29 +93,5 @@ public static class DataGridTestHelper
             throw new InvalidOperationException("DataGrid CollectionView is null");
 
         return collectionView.Cast<PlayerRow>().Select(selector).ToList();
-    }
-
-    private static bool IsComparerDescending(object comparer)
-    {
-        var descendingField = comparer.GetType().GetField("_descending",
-            BindingFlags.NonPublic | BindingFlags.Instance);
-        return descendingField != null && (bool)(descendingField.GetValue(comparer) ?? false);
-    }
-
-    /// <summary>
-    /// Wraps a comparer and negates its result, simulating the DataGrid's
-    /// descending sort behavior.
-    /// </summary>
-    private sealed class NegatingComparer : IComparer
-    {
-        private readonly object _inner;
-        public NegatingComparer(object inner) => _inner = inner;
-
-        public int Compare(object? x, object? y)
-        {
-            if (_inner is IComparer comparer)
-                return -comparer.Compare(x, y);
-            return 0;
-        }
     }
 }

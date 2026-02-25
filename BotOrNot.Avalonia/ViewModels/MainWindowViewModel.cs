@@ -201,6 +201,10 @@ public class MainWindowViewModel : ReactiveObject
                           $"Players: {data.Metadata.PlayerCount}" + (data.Metadata.MaxPlayers.HasValue ? $" (Max: {data.Metadata.MaxPlayers})" : "") + "\n" +
                           $"Eliminations (in replay): {data.Metadata.EliminationCount}";
         }
+        catch (IOException ex)
+        {
+            ErrorMessage = $"Could not read replay file: {ex.Message} (The file may still be locked by Fortnite.)";
+        }
         finally
         {
             IsLoading = false;

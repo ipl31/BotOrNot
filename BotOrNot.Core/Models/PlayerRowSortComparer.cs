@@ -3,16 +3,12 @@ using System.Collections;
 namespace BotOrNot.Core.Models;
 
 /// <summary>
-/// Compares PlayerRow objects for DataGrid column sorting.
-/// Numeric fields sort as integers, bot status sorts logically (true → false),
-/// and Unknown/null/empty values sort to bottom or top depending on mode.
+/// Self-contained comparer for PlayerRow objects. Returns the final desired
+/// sort order directly — callers use OrderBy (never negate the result).
 ///
-/// The <paramref name="descending"/> constructor flag must match the DataGrid's
-/// sort direction so the "always-at-bottom" logic survives the DataGrid's
-/// automatic result negation for descending sorts.
-///
-/// When <paramref name="unknownsFirst"/> is true, Unknown/null/empty values
-/// are pushed to the top instead (mode 3 of the 3-mode sort cycle).
+/// When <paramref name="descending"/> is true, non-unknown values are returned
+/// in descending order. Unknown/null/empty values always sort to bottom
+/// unless <paramref name="unknownsFirst"/> is true (then they sort to top).
 /// </summary>
 public sealed class PlayerRowSortComparer : IComparer<PlayerRow>, IComparer
 {
@@ -39,8 +35,8 @@ public sealed class PlayerRowSortComparer : IComparer<PlayerRow>, IComparer
     public int Compare(PlayerRow? x, PlayerRow? y)
     {
         if (x is null && y is null) return 0;
-        if (x is null) return _descending ? -1 : 1;
-        if (y is null) return _descending ? 1 : -1;
+        if (x is null) return 1;
+        if (y is null) return -1;
 
         var vx = _selector(x);
         var vy = _selector(y);
@@ -50,20 +46,15 @@ public sealed class PlayerRowSortComparer : IComparer<PlayerRow>, IComparer
 
         if (_unknownsFirst)
         {
-            // Push Unknown/null/empty to TOP.
-            // The DataGrid negates for descending, so pre-invert accordingly.
             if (xUnknown && yUnknown) return 0;
-            if (xUnknown) return _descending ? 1 : -1;
-            if (yUnknown) return _descending ? -1 : 1;
+            if (xUnknown) return -1;
+            if (yUnknown) return 1;
         }
         else
         {
-            // Push Unknown/null/empty to BOTTOM regardless of direction.
-            // The DataGrid negates the result for descending, so we
-            // pre-invert so the final result still pushes Unknown last.
             if (xUnknown && yUnknown) return 0;
-            if (xUnknown) return _descending ? -1 : 1;
-            if (yUnknown) return _descending ? 1 : -1;
+            if (xUnknown) return 1;
+            if (yUnknown) return -1;
         }
 
         int result;
@@ -74,6 +65,9 @@ public sealed class PlayerRowSortComparer : IComparer<PlayerRow>, IComparer
             result = CompareNumeric(vx!, vy!);
         else
             result = string.Compare(vx, vy, StringComparison.OrdinalIgnoreCase);
+
+        if (_descending)
+            result = -result;
 
         return result;
     }
@@ -99,7 +93,7 @@ public sealed class PlayerRowSortComparer : IComparer<PlayerRow>, IComparer
         _ => 2
     };
 
-    internal static bool IsUnknownOrEmpty(string? value) =>
+    public static bool IsUnknownOrEmpty(string? value) =>
         string.IsNullOrEmpty(value) ||
         value.Equals("unknown", StringComparison.OrdinalIgnoreCase);
 }
