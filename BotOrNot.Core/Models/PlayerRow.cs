@@ -12,6 +12,7 @@ public sealed class PlayerRow
     public string? TeamIndex { get; set; }
     public string? DeathCause { get; set; }
     public string? Placement { get; set; }
+    public string? ElimTime { get; set; }
     public string? Pickaxe { get; set; }
     public string? Glider { get; set; }
 

@@ -223,7 +223,9 @@ public sealed class ReplayService : IReplayService
             var isOwnerAction = !string.IsNullOrEmpty(ownerId) &&
                                 eliminatorId.Equals(ownerId, StringComparison.OrdinalIgnoreCase);
 
-            var eventTime = ParseElimTime(ReflectionUtils.GetObject(elim, "Time"));
+            var timeObj = ReflectionUtils.GetObject(elim, "Time");
+            var eventTime = ParseElimTime(timeObj);
+            var eventTimeStr = FormatElimTime(eventTime, timeObj);
 
             if (isKnock)
             {
@@ -235,8 +237,12 @@ public sealed class ReplayService : IReplayService
             }
             else
             {
-                // Finish event — count it (no longer building display strings)
+                // Finish event — count it and record time on the eliminated player
                 eliminationCount++;
+
+                // Set elimination time on the player row
+                if (playersById.TryGetValue(eliminatedId, out var elimRow) && eventTimeStr != null)
+                    elimRow.ElimTime = eventTimeStr;
 
                 // Track who eliminated the replay owner
                 if (!string.IsNullOrEmpty(ownerId) &&
@@ -279,6 +285,7 @@ public sealed class ReplayService : IReplayService
                         Kills = victim.Kills,
                         TeamIndex = victim.TeamIndex,
                         DeathCause = victim.DeathCause,
+                        ElimTime = eventTimeStr,
                         Pickaxe = victim.Pickaxe,
                         Glider = victim.Glider
                     });
@@ -325,6 +332,15 @@ public sealed class ReplayService : IReplayService
             OwnerEliminatedBy = ownerEliminatedBy,
             Metadata = metadata
         };
+    }
+
+    static string? FormatElimTime(TimeSpan? ts, object? rawTimeObj)
+    {
+        if (ts.HasValue)
+            return $"{(int)ts.Value.TotalMinutes:D2}:{ts.Value.Seconds:D2}";
+        // Fall back to the raw string if parsing failed but a value exists
+        var raw = rawTimeObj?.ToString();
+        return string.IsNullOrWhiteSpace(raw) ? null : raw;
     }
 
     static TimeSpan? ParseElimTime(object? timeObj)

@@ -152,6 +152,7 @@ public partial class MainWindow : Window
             "Squad"      => new(p => p.TeamIndex, true, false, false),
             "Placement"  => new(p => p.Placement, true, false, false),
             "Death Cause" => new(p => p.DeathCause, false, false, true),
+            "Elim Time"  => new(p => p.ElimTime, true, false, false),
             "Pickaxe"    => new(p => p.Pickaxe, false, false, false),
             "Glider"     => new(p => p.Glider, false, false, false),
             _ => default
