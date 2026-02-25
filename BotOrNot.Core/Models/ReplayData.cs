@@ -3,6 +3,7 @@ namespace BotOrNot.Core.Models;
 public sealed class ReplayData
 {
     public List<PlayerRow> Players { get; set; } = new();
+    [Obsolete("Use Metadata.EliminationCount instead. This list is no longer populated.")]
     public List<string> Eliminations { get; set; } = new();
     public List<PlayerRow> OwnerEliminations { get; set; } = new();
     public string? OwnerName { get; set; }

@@ -88,12 +88,8 @@ public class ReplayServiceTests
         var result = await service.LoadReplayAsync(TestReplayPath);
 
         // Assert - elimination count should match the filtered list
-        Assert.That(result.Metadata.EliminationCount, Is.EqualTo(result.Eliminations.Count),
-            "Elimination count in metadata should match the eliminations list");
-
-        // The eliminations list should only contain finishes, not knocks
-        // In this replay, there are fewer eliminations than total events because knocks are filtered
-        Assert.That(result.Eliminations.Count, Is.GreaterThan(0),
+        // The elimination count should only count finishes, not knocks
+        Assert.That(result.Metadata.EliminationCount, Is.GreaterThan(0),
             "Should have some eliminations");
     }
 
