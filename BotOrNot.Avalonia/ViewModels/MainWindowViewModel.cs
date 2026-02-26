@@ -31,6 +31,8 @@ public class MainWindowViewModel : ReactiveObject
     private string? _elimsSummary;
     private string? _playlistName;
     private bool _hasMetadata;
+    private bool _hasData;
+    private bool _isDropTargetActive;
 
     private readonly List<PlayerRow> _allPlayers = new();
     private readonly List<PlayerRow> _allOwnerEliminations = new();
@@ -114,6 +116,18 @@ public class MainWindowViewModel : ReactiveObject
     {
         get => _hasMetadata;
         set => this.RaiseAndSetIfChanged(ref _hasMetadata, value);
+    }
+
+    public bool HasData
+    {
+        get => _hasData;
+        set => this.RaiseAndSetIfChanged(ref _hasData, value);
+    }
+
+    public bool IsDropTargetActive
+    {
+        get => _isDropTargetActive;
+        set => this.RaiseAndSetIfChanged(ref _isDropTargetActive, value);
     }
 
     public bool IsLoading
@@ -254,6 +268,7 @@ public class MainWindowViewModel : ReactiveObject
             DurationText = $"{data.Metadata.MatchDurationMinutes:F1}m";
             ElimsSummary = $"{totalKills} Elims ({botKills} Bot{(botKills != 1 ? "s" : "")})";
             HasMetadata = true;
+            HasData = true;
         }
         catch (IOException ex)
         {

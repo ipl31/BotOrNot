@@ -4,6 +4,7 @@ using System.Reactive.Linq;
 using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
@@ -53,6 +54,11 @@ public partial class MainWindow : Window
             _playersGrid.Sorting += OnDataGridSorting;
             _playersGrid.LoadingRow += OnDataGridLoadingRow;
         }
+
+        // Drag-and-drop handlers
+        AddHandler(DragDrop.DragOverEvent, OnDragOver);
+        AddHandler(DragDrop.DragLeaveEvent, OnDragLeave);
+        AddHandler(DragDrop.DropEvent, OnFileDrop);
 
         // Build the columns menu when the window loads
         Loaded += (_, _) => BuildColumnsFlyout();
@@ -177,6 +183,47 @@ public partial class MainWindow : Window
             "Glider"     => new(p => p.Glider, false, false, false),
             _ => default
         };
+    }
+
+    private void OnDragOver(object? sender, DragEventArgs e)
+    {
+        var files = e.Data.GetFiles();
+        if (files != null && files.Any(f => f.Name.EndsWith(".replay", StringComparison.OrdinalIgnoreCase)))
+        {
+            e.DragEffects = DragDropEffects.Copy;
+        }
+        else
+        {
+            e.DragEffects = DragDropEffects.None;
+        }
+        _viewModel.IsDropTargetActive = true;
+    }
+
+    private void OnDragLeave(object? sender, DragEventArgs e)
+    {
+        _viewModel.IsDropTargetActive = false;
+    }
+
+    private async void OnFileDrop(object? sender, DragEventArgs e)
+    {
+        _viewModel.IsDropTargetActive = false;
+
+        try
+        {
+            var files = e.Data.GetFiles();
+            var replayFile = files?.FirstOrDefault(f => f.Name.EndsWith(".replay", StringComparison.OrdinalIgnoreCase));
+            var path = replayFile?.TryGetLocalPath();
+
+            if (!string.IsNullOrEmpty(path))
+            {
+                await _viewModel.LoadReplayCommand.Execute(path).FirstAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _viewModel.ErrorMessage = $"Failed to load replay: {ex.Message} (The file may still be locked by Fortnite.)";
+            _viewModel.IsLoading = false;
+        }
     }
 
     private async void OpenReplay_Click(object? sender, RoutedEventArgs e)

@@ -21,7 +21,9 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,2*,Auto,3*">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,2*,Auto,3*"
+          DragDrop.AllowDrop="True"
+          Background="Transparent">
 
         <!-- Top Bar -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="8" Spacing="8">
@@ -30,6 +32,10 @@
                    Height="32"
                    VerticalAlignment="Center" />
             <Button x:Name="OpenButton" Content="Select Replay File" Click="OpenReplay_Click" />
+            <TextBlock Text="or drag &amp; drop"
+                       Foreground="#AAAAAA"
+                       FontSize="12"
+                       VerticalAlignment="Center" />
             <Button x:Name="ColumnsButton" Content="Columns" />
             <ProgressBar IsIndeterminate="True"
                          IsVisible="{Binding IsLoading}"
@@ -112,7 +118,8 @@
         </Border>
 
         <!-- Filter Box -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="8,8,8,4" Spacing="8">
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="8,8,8,4" Spacing="8"
+                    IsVisible="{Binding HasData}">
             <TextBlock Text="Filter:" VerticalAlignment="Center" FontWeight="SemiBold" />
             <TextBox Text="{Binding FilterText}"
                      Watermark="Type to filter results..."
@@ -125,7 +132,8 @@
                    Text="{Binding OwnerKillsHeader}"
                    FontWeight="Bold"
                    FontSize="14"
-                   Margin="8,8,8,4" />
+                   Margin="8,8,8,4"
+                   IsVisible="{Binding HasData}" />
 
         <!-- Owner Eliminations Grid -->
         <DataGrid Grid.Row="4"
@@ -137,7 +145,8 @@
                   CanUserResizeColumns="True"
                   CanUserSortColumns="True"
                   GridLinesVisibility="Horizontal"
-                  Margin="8,0,8,8">
+                  Margin="8,0,8,8"
+                  IsVisible="{Binding HasData}">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Id" Binding="{Binding Id}" Width="364" IsVisible="False" />
                 <DataGridTemplateColumn Header="Name" Width="195" CanUserSort="True">
@@ -197,7 +206,8 @@
                    Text="{Binding PlayersSeenHeader}"
                    FontWeight="Bold"
                    FontSize="14"
-                   Margin="8,8,8,4" />
+                   Margin="8,8,8,4"
+                   IsVisible="{Binding HasData}" />
 
         <!-- All Players Grid -->
         <DataGrid Grid.Row="6"
@@ -209,7 +219,8 @@
                   CanUserResizeColumns="True"
                   CanUserSortColumns="True"
                   GridLinesVisibility="Horizontal"
-                  Margin="8,0,8,8">
+                  Margin="8,0,8,8"
+                  IsVisible="{Binding HasData}">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Id" Binding="{Binding Id}" Width="364" IsVisible="False" />
                 <DataGridTemplateColumn Header="Name" Width="195" CanUserSort="True">
@@ -263,5 +274,44 @@
                 <DataGridTextColumn Header="Glider" Binding="{Binding Glider}" Width="195" IsVisible="False" />
             </DataGrid.Columns>
         </DataGrid>
+        <!-- Empty-state drop zone (visible when no data loaded) -->
+        <Border Grid.Row="2" Grid.RowSpan="5"
+                IsVisible="{Binding !HasData}"
+                Background="Transparent"
+                Margin="8">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="12">
+                <TextBlock Text="&#x1F4C1;"
+                           FontSize="48"
+                           HorizontalAlignment="Center"
+                           Foreground="#BBBBBB" />
+                <TextBlock Text="Drop a .replay file here"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           Foreground="#888888" />
+                <TextBlock Text="or click Select Replay File"
+                           FontSize="14"
+                           HorizontalAlignment="Center"
+                           Foreground="#AAAAAA" />
+            </StackPanel>
+        </Border>
+
+        <!-- Drag-over overlay -->
+        <Border Grid.Row="0" Grid.RowSpan="7"
+                IsVisible="{Binding IsDropTargetActive}"
+                Background="#220078D4"
+                BorderBrush="#0078D4"
+                BorderThickness="3"
+                CornerRadius="8"
+                IsHitTestVisible="False">
+            <TextBlock Text="Drop .replay file"
+                       FontSize="22"
+                       FontWeight="Bold"
+                       Foreground="#0078D4"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center" />
+        </Border>
     </Grid>
 </Window>
