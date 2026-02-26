@@ -150,7 +150,7 @@ public partial class MainWindow : Window
             "Platform"   => new(p => p.Platform, false, false, true),
             "Kills"      => new(p => p.Kills, true, false, false),
             "Squad"      => new(p => p.TeamIndex, true, false, false),
-            "Placement"  => new(p => p.Placement, true, false, false),
+            "Place"      => new(p => p.Placement, true, false, false),
             "Death Cause" => new(p => p.DeathCause, false, false, true),
             "Elim Time"  => new(p => p.ElimTime, true, false, false),
             "Pickaxe"    => new(p => p.Pickaxe, false, false, false),
