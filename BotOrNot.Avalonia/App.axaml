@@ -2,6 +2,52 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="BotOrNot.Avalonia.App"
              RequestedThemeVariant="Default">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="HintTextBrush" Color="#AAAAAA" />
+                    <SolidColorBrush x:Key="SubtleTextBrush" Color="#888888" />
+                    <SolidColorBrush x:Key="ErrorBannerBackground" Color="#FFDDDD" />
+                    <SolidColorBrush x:Key="ErrorBannerBorder" Color="#FF6666" />
+                    <SolidColorBrush x:Key="ErrorBannerForeground" Color="#CC0000" />
+                    <SolidColorBrush x:Key="SummaryBarBackground" Color="#F5F5F5" />
+                    <SolidColorBrush x:Key="SummaryBarBorder" Color="#CCCCCC" />
+                    <SolidColorBrush x:Key="PillBackground" Color="#E8E8E8" />
+                    <SolidColorBrush x:Key="LinkForeground" Color="#0078D4" />
+                    <SolidColorBrush x:Key="LinkHoverForeground" Color="#005A9E" />
+                    <SolidColorBrush x:Key="EmptyStateIconBrush" Color="#BBBBBB" />
+                    <SolidColorBrush x:Key="EmptyStatePrimaryBrush" Color="#888888" />
+                    <SolidColorBrush x:Key="EmptyStateSecondaryBrush" Color="#AAAAAA" />
+                    <SolidColorBrush x:Key="DragOverlayBackground" Color="#220078D4" />
+                    <SolidColorBrush x:Key="DragOverlayBorder" Color="#0078D4" />
+                    <SolidColorBrush x:Key="DragOverlayText" Color="#0078D4" />
+                    <SolidColorBrush x:Key="BotRowBackground" Color="#F5F5F5" />
+                    <SolidColorBrush x:Key="DefaultRowBackground" Color="#FFFFFF" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="HintTextBrush" Color="#666666" />
+                    <SolidColorBrush x:Key="SubtleTextBrush" Color="#777777" />
+                    <SolidColorBrush x:Key="ErrorBannerBackground" Color="#3D1A1A" />
+                    <SolidColorBrush x:Key="ErrorBannerBorder" Color="#8B2222" />
+                    <SolidColorBrush x:Key="ErrorBannerForeground" Color="#FF6B6B" />
+                    <SolidColorBrush x:Key="SummaryBarBackground" Color="#2D2D2D" />
+                    <SolidColorBrush x:Key="SummaryBarBorder" Color="#444444" />
+                    <SolidColorBrush x:Key="PillBackground" Color="#3A3A3A" />
+                    <SolidColorBrush x:Key="LinkForeground" Color="#4CA8F0" />
+                    <SolidColorBrush x:Key="LinkHoverForeground" Color="#7BC4FF" />
+                    <SolidColorBrush x:Key="EmptyStateIconBrush" Color="#555555" />
+                    <SolidColorBrush x:Key="EmptyStatePrimaryBrush" Color="#999999" />
+                    <SolidColorBrush x:Key="EmptyStateSecondaryBrush" Color="#666666" />
+                    <SolidColorBrush x:Key="DragOverlayBackground" Color="#2200AAFF" />
+                    <SolidColorBrush x:Key="DragOverlayBorder" Color="#4CA8F0" />
+                    <SolidColorBrush x:Key="DragOverlayText" Color="#4CA8F0" />
+                    <SolidColorBrush x:Key="BotRowBackground" Color="#2A2A2A" />
+                    <SolidColorBrush x:Key="DefaultRowBackground" Color="#1E1E1E" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>

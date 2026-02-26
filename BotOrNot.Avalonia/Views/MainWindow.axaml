@@ -33,37 +33,42 @@
                    VerticalAlignment="Center" />
             <Button x:Name="OpenButton" Content="Select Replay File" Click="OpenReplay_Click" />
             <TextBlock Text="or drag &amp; drop"
-                       Foreground="#AAAAAA"
+                       Foreground="{DynamicResource HintTextBrush}"
                        FontSize="12"
                        VerticalAlignment="Center" />
             <Button x:Name="ColumnsButton" Content="Columns" />
+            <Button Content="{Binding ThemeIcon}"
+                    Command="{Binding CycleThemeCommand}"
+                    ToolTip.Tip="{Binding ThemeToggleTooltip}"
+                    Padding="6,2"
+                    MinWidth="32" />
             <ProgressBar IsIndeterminate="True"
                          IsVisible="{Binding IsLoading}"
                          Width="100"
                          Height="20"
                          Margin="8,0,0,0"/>
             <TextBlock Text="Data presented is not guaranteed to be accurate."
-                       Foreground="#888888"
+                       Foreground="{DynamicResource SubtleTextBrush}"
                        VerticalAlignment="Center"
                        Margin="16,0,0,0" />
         </StackPanel>
 
         <!-- Error Banner -->
         <Border Grid.Row="0"
-                Background="#FFDDDD"
-                BorderBrush="#FF6666"
+                Background="{DynamicResource ErrorBannerBackground}"
+                BorderBrush="{DynamicResource ErrorBannerBorder}"
                 BorderThickness="1"
                 Padding="8"
                 Margin="8,40,8,0"
                 CornerRadius="4"
                 IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-            <TextBlock Text="{Binding ErrorMessage}" Foreground="#CC0000" />
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource ErrorBannerForeground}" />
         </Border>
 
         <!-- Summary Header Bar -->
         <Border Grid.Row="1"
-                Background="#F5F5F5"
-                BorderBrush="#CCCCCC"
+                Background="{DynamicResource SummaryBarBackground}"
+                BorderBrush="{DynamicResource SummaryBarBorder}"
                 BorderThickness="0,0,0,1"
                 Padding="8,6"
                 Margin="0"
@@ -71,28 +76,28 @@
                 ToolTip.Tip="{Binding PlaylistName}">
             <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <!-- Mode -->
-                <Border Background="#E8E8E8" CornerRadius="4" Padding="8,3" Margin="0,2,6,2">
+                <Border Background="{DynamicResource PillBackground}" CornerRadius="4" Padding="8,3" Margin="0,2,6,2">
                     <TextBlock Text="{Binding GameMode}" FontSize="12" VerticalAlignment="Center"
                                MaxWidth="300" TextTrimming="CharacterEllipsis" />
                 </Border>
 
                 <!-- Placement -->
-                <Border Background="#E8E8E8" CornerRadius="4" Padding="8,3" Margin="0,2,6,2">
+                <Border Background="{DynamicResource PillBackground}" CornerRadius="4" Padding="8,3" Margin="0,2,6,2">
                     <TextBlock Text="{Binding PlacementText}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" />
                 </Border>
 
                 <!-- Duration -->
-                <Border Background="#E8E8E8" CornerRadius="4" Padding="8,3" Margin="0,2,6,2">
+                <Border Background="{DynamicResource PillBackground}" CornerRadius="4" Padding="8,3" Margin="0,2,6,2">
                     <TextBlock Text="{Binding DurationText}" FontSize="12" VerticalAlignment="Center" />
                 </Border>
 
                 <!-- Elims Summary -->
-                <Border Background="#E8E8E8" CornerRadius="4" Padding="8,3" Margin="0,2,6,2">
+                <Border Background="{DynamicResource PillBackground}" CornerRadius="4" Padding="8,3" Margin="0,2,6,2">
                     <TextBlock Text="{Binding ElimsSummary}" FontSize="12" VerticalAlignment="Center" />
                 </Border>
 
                 <!-- Eliminated by (conditional) -->
-                <Border Background="#E8E8E8" CornerRadius="4" Padding="8,3" Margin="0,2,6,2"
+                <Border Background="{DynamicResource PillBackground}" CornerRadius="4" Padding="8,3" Margin="0,2,6,2"
                         IsVisible="{Binding EliminatorName, Converter={x:Static ObjectConverters.IsNotNull}}">
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <TextBlock Text="Eliminated by:" FontSize="12" VerticalAlignment="Center" />
@@ -103,12 +108,12 @@
                                 FontSize="12"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                Foreground="#0078D4"
+                                Foreground="{DynamicResource LinkForeground}"
                                 Cursor="Hand"
                                 VerticalAlignment="Center">
                             <Button.Styles>
                                 <Style Selector="Button:pointerover">
-                                    <Setter Property="Foreground" Value="#005A9E" />
+                                    <Setter Property="Foreground" Value="{DynamicResource LinkHoverForeground}" />
                                 </Style>
                             </Button.Styles>
                         </Button>
@@ -160,12 +165,12 @@
                                         FontSize="12"
                                         Background="Transparent"
                                         BorderThickness="0"
-                                        Foreground="#0078D4"
+                                        Foreground="{DynamicResource LinkForeground}"
                                         Cursor="Hand"
                                         ToolTip.Tip="Click to check if this player has a Fortnite Tracker page">
                                     <Button.Styles>
                                         <Style Selector="Button:pointerover">
-                                            <Setter Property="Foreground" Value="#005A9E" />
+                                            <Setter Property="Foreground" Value="{DynamicResource LinkHoverForeground}" />
                                         </Style>
                                     </Button.Styles>
                                 </Button>
@@ -234,12 +239,12 @@
                                         FontSize="12"
                                         Background="Transparent"
                                         BorderThickness="0"
-                                        Foreground="#0078D4"
+                                        Foreground="{DynamicResource LinkForeground}"
                                         Cursor="Hand"
                                         ToolTip.Tip="Click to check if this player has a Fortnite Tracker page">
                                     <Button.Styles>
                                         <Style Selector="Button:pointerover">
-                                            <Setter Property="Foreground" Value="#005A9E" />
+                                            <Setter Property="Foreground" Value="{DynamicResource LinkHoverForeground}" />
                                         </Style>
                                     </Button.Styles>
                                 </Button>
@@ -285,31 +290,31 @@
                 <TextBlock Text="&#x1F4C1;"
                            FontSize="48"
                            HorizontalAlignment="Center"
-                           Foreground="#BBBBBB" />
+                           Foreground="{DynamicResource EmptyStateIconBrush}" />
                 <TextBlock Text="Drop a .replay file here"
                            FontSize="20"
                            FontWeight="SemiBold"
                            HorizontalAlignment="Center"
-                           Foreground="#888888" />
+                           Foreground="{DynamicResource EmptyStatePrimaryBrush}" />
                 <TextBlock Text="or click Select Replay File"
                            FontSize="14"
                            HorizontalAlignment="Center"
-                           Foreground="#AAAAAA" />
+                           Foreground="{DynamicResource EmptyStateSecondaryBrush}" />
             </StackPanel>
         </Border>
 
         <!-- Drag-over overlay -->
         <Border Grid.Row="0" Grid.RowSpan="7"
                 IsVisible="{Binding IsDropTargetActive}"
-                Background="#220078D4"
-                BorderBrush="#0078D4"
+                Background="{DynamicResource DragOverlayBackground}"
+                BorderBrush="{DynamicResource DragOverlayBorder}"
                 BorderThickness="3"
                 CornerRadius="8"
                 IsHitTestVisible="False">
             <TextBlock Text="Drop .replay file"
                        FontSize="22"
                        FontWeight="Bold"
-                       Foreground="#0078D4"
+                       Foreground="{DynamicResource DragOverlayText}"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center" />
         </Border>

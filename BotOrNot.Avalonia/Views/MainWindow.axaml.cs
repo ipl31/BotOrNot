@@ -62,6 +62,24 @@ public partial class MainWindow : Window
 
         // Build the columns menu when the window loads
         Loaded += (_, _) => BuildColumnsFlyout();
+
+        // Refresh DataGrid row backgrounds when theme changes
+        if (global::Avalonia.Application.Current != null)
+        {
+            global::Avalonia.Application.Current.ActualThemeVariantChanged += (_, _) =>
+            {
+                RefreshDataGridRows(ownerGrid);
+                RefreshDataGridRows(_playersGrid);
+            };
+        }
+    }
+
+    private static void RefreshDataGridRows(DataGrid? grid)
+    {
+        if (grid?.ItemsSource == null) return;
+        var source = grid.ItemsSource;
+        grid.ItemsSource = null;
+        grid.ItemsSource = source;
     }
 
     private void OnDataGridSorting(object? sender, DataGridColumnEventArgs e)
@@ -102,14 +120,14 @@ public partial class MainWindow : Window
         });
     }
 
-    private static readonly SolidColorBrush BotRowBrush = new(Color.Parse("#F5F5F5"));
-    private static readonly SolidColorBrush DefaultRowBrush = new(Colors.White);
-
     private void OnDataGridLoadingRow(object? sender, DataGridRowEventArgs e)
     {
         if (e.Row.DataContext is PlayerRow player)
         {
-            e.Row.Background = player.IsBot ? BotRowBrush : DefaultRowBrush;
+            var app = global::Avalonia.Application.Current;
+            var botBrush = app?.FindResource("BotRowBackground") as IBrush;
+            var defaultBrush = app?.FindResource("DefaultRowBackground") as IBrush;
+            e.Row.Background = player.IsBot ? botBrush : defaultBrush;
         }
     }
 

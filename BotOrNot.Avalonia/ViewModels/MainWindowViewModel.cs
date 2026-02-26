@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reflection;
+using BotOrNot.Avalonia.Services;
 using BotOrNot.Core.Models;
 using BotOrNot.Core.Services;
 using ReactiveUI;
@@ -11,6 +12,7 @@ namespace BotOrNot.Avalonia.ViewModels;
 public class MainWindowViewModel : ReactiveObject
 {
     private readonly IReplayService _replayService;
+    private ThemePreference _currentTheme;
 
     private static readonly string AppVersion = Assembly.GetExecutingAssembly()
         .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
@@ -33,6 +35,8 @@ public class MainWindowViewModel : ReactiveObject
     private bool _hasMetadata;
     private bool _hasData;
     private bool _isDropTargetActive;
+    private string _themeIcon = "\u2699";
+    private string _themeToggleTooltip = "Theme: System";
 
     private readonly List<PlayerRow> _allPlayers = new();
     private readonly List<PlayerRow> _allOwnerEliminations = new();
@@ -46,6 +50,11 @@ public class MainWindowViewModel : ReactiveObject
     {
         _replayService = new ReplayService();
 
+        // Load saved theme preference and apply before window renders
+        var settings = SettingsService.Load();
+        _currentTheme = settings.Theme;
+        ApplyTheme();
+
         LoadReplayCommand = ReactiveCommand.CreateFromTask<string>(LoadReplayAsync);
         LoadReplayCommand.ThrownExceptions.Subscribe(ex =>
         {
@@ -53,6 +62,7 @@ public class MainWindowViewModel : ReactiveObject
             IsLoading = false;
         });
 
+        CycleThemeCommand = ReactiveCommand.Create(CycleTheme);
         FilterByPlayerCommand = ReactiveCommand.Create<string>(FilterByPlayer);
 
         // Filter logic - react to filter text changes
@@ -157,6 +167,49 @@ public class MainWindowViewModel : ReactiveObject
     }
 
     public ReactiveCommand<string, Unit> FilterByPlayerCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> CycleThemeCommand { get; }
+
+    public string ThemeIcon
+    {
+        get => _themeIcon;
+        set => this.RaiseAndSetIfChanged(ref _themeIcon, value);
+    }
+
+    public string ThemeToggleTooltip
+    {
+        get => _themeToggleTooltip;
+        set => this.RaiseAndSetIfChanged(ref _themeToggleTooltip, value);
+    }
+
+    private void CycleTheme()
+    {
+        _currentTheme = _currentTheme switch
+        {
+            ThemePreference.System => ThemePreference.Light,
+            ThemePreference.Light => ThemePreference.Dark,
+            ThemePreference.Dark => ThemePreference.System,
+            _ => ThemePreference.System
+        };
+
+        ApplyTheme();
+        SettingsService.Save(new AppSettings { Theme = _currentTheme });
+    }
+
+    private void ApplyTheme()
+    {
+        if (global::Avalonia.Application.Current != null)
+        {
+            global::Avalonia.Application.Current.RequestedThemeVariant = SettingsService.ToThemeVariant(_currentTheme);
+        }
+
+        (ThemeIcon, ThemeToggleTooltip) = _currentTheme switch
+        {
+            ThemePreference.Light => ("\u2600", "Theme: Light"),
+            ThemePreference.Dark => ("\uD83C\uDF19", "Theme: Dark"),
+            _ => ("\u2699", "Theme: System")
+        };
+    }
 
     private void FilterByPlayer(string playerName)
     {
