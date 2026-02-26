@@ -14,6 +14,7 @@
         <conv:BotBorderColorConverter x:Key="BotBorderColorConverter" />
         <conv:PlatformNameConverter x:Key="PlatformNameConverter" />
         <conv:SquadDisplayConverter x:Key="SquadDisplayConverter" />
+        <conv:UnknownToDashConverter x:Key="UnknownToDashConverter" />
     </Window.Resources>
 
     <Design.DataContext>
@@ -167,7 +168,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="104" />
+                <DataGridTextColumn Header="Level" Binding="{Binding Level, Converter={StaticResource UnknownToDashConverter}}" Width="104" />
                 <DataGridTemplateColumn Header="Bot" Width="78" CanUserSort="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="models:PlayerRow">
@@ -181,9 +182,9 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Platform" Binding="{Binding Platform, Converter={StaticResource PlatformNameConverter}}" Width="130" />
-                <DataGridTextColumn Header="Kills" Binding="{Binding Kills}" Width="91" />
+                <DataGridTextColumn Header="Kills" Binding="{Binding Kills, Converter={StaticResource UnknownToDashConverter}}" Width="91" />
                 <DataGridTextColumn Header="Squad" Binding="{Binding TeamIndex, Converter={StaticResource SquadDisplayConverter}}" Width="100" />
-                <DataGridTextColumn Header="Place" Binding="{Binding Placement}" Width="90" />
+                <DataGridTextColumn Header="Place" Binding="{Binding Placement, Converter={StaticResource UnknownToDashConverter}}" Width="90" />
                 <DataGridTextColumn Header="Death Cause" Binding="{Binding DeathCause}" Width="156" />
                 <DataGridTextColumn Header="Elim Time" Binding="{Binding ElimTime}" Width="90" />
                 <DataGridTextColumn Header="Pickaxe" Binding="{Binding Pickaxe}" Width="195" IsVisible="False" />
@@ -239,7 +240,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="104" />
+                <DataGridTextColumn Header="Level" Binding="{Binding Level, Converter={StaticResource UnknownToDashConverter}}" Width="104" />
                 <DataGridTemplateColumn Header="Bot" Width="78" CanUserSort="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="models:PlayerRow">
@@ -253,9 +254,9 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Platform" Binding="{Binding Platform, Converter={StaticResource PlatformNameConverter}}" Width="130" />
-                <DataGridTextColumn Header="Kills" Binding="{Binding Kills}" Width="91" />
+                <DataGridTextColumn Header="Kills" Binding="{Binding Kills, Converter={StaticResource UnknownToDashConverter}}" Width="91" />
                 <DataGridTextColumn Header="Squad" Binding="{Binding TeamIndex, Converter={StaticResource SquadDisplayConverter}}" Width="100" />
-                <DataGridTextColumn Header="Place" Binding="{Binding Placement}" Width="90" />
+                <DataGridTextColumn Header="Place" Binding="{Binding Placement, Converter={StaticResource UnknownToDashConverter}}" Width="90" />
                 <DataGridTextColumn Header="Death Cause" Binding="{Binding DeathCause}" Width="156" />
                 <DataGridTextColumn Header="Elim Time" Binding="{Binding ElimTime}" Width="90" />
                 <DataGridTextColumn Header="Pickaxe" Binding="{Binding Pickaxe}" Width="195" IsVisible="False" />

@@ -194,8 +194,11 @@ public class MainWindowViewModel : ReactiveObject
 
             _allPlayers.Clear();
             _allOwnerEliminations.Clear();
-            foreach (var p in data.Players) _allPlayers.Add(p);
-            foreach (var p in data.OwnerEliminations) _allOwnerEliminations.Add(p);
+            // Sort by ElimTime (chronological) by default; players without ElimTime go to the bottom
+            foreach (var p in data.Players.OrderBy(p => string.IsNullOrEmpty(p.ElimTime) ? 1 : 0).ThenBy(p => p.ElimTime, StringComparer.Ordinal))
+                _allPlayers.Add(p);
+            foreach (var p in data.OwnerEliminations.OrderBy(p => string.IsNullOrEmpty(p.ElimTime) ? 1 : 0).ThenBy(p => p.ElimTime, StringComparer.Ordinal))
+                _allOwnerEliminations.Add(p);
 
             ApplyFilter();
 

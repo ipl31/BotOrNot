@@ -5,6 +5,7 @@ using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using BotOrNot.Avalonia.ViewModels;
@@ -40,10 +41,18 @@ public partial class MainWindow : Window
             _columnsButton.Flyout = _columnsFlyout;
         }
 
-        // Wire up custom sorting on both grids
+        // Wire up custom sorting and row tinting on both grids
         var ownerGrid = this.FindControl<DataGrid>("OwnerEliminationsGrid");
-        if (ownerGrid != null) ownerGrid.Sorting += OnDataGridSorting;
-        if (_playersGrid != null) _playersGrid.Sorting += OnDataGridSorting;
+        if (ownerGrid != null)
+        {
+            ownerGrid.Sorting += OnDataGridSorting;
+            ownerGrid.LoadingRow += OnDataGridLoadingRow;
+        }
+        if (_playersGrid != null)
+        {
+            _playersGrid.Sorting += OnDataGridSorting;
+            _playersGrid.LoadingRow += OnDataGridLoadingRow;
+        }
 
         // Build the columns menu when the window loads
         Loaded += (_, _) => BuildColumnsFlyout();
@@ -85,6 +94,17 @@ public partial class MainWindow : Window
                 cv.SortDescriptions.Add(DataGridSortDescription.FromComparer(comparer));
             }
         });
+    }
+
+    private static readonly SolidColorBrush BotRowBrush = new(Color.Parse("#F5F5F5"));
+    private static readonly SolidColorBrush DefaultRowBrush = new(Colors.White);
+
+    private void OnDataGridLoadingRow(object? sender, DataGridRowEventArgs e)
+    {
+        if (e.Row.DataContext is PlayerRow player)
+        {
+            e.Row.Background = player.IsBot ? BotRowBrush : DefaultRowBrush;
+        }
     }
 
     private IComparer<PlayerRow> BuildStandardComparer(

@@ -56,7 +56,8 @@ public class PlatformNameConverter : IValueConverter
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        return BotOrNot.Core.Services.PlatformHelper.GetFriendlyName(value as string);
+        var name = BotOrNot.Core.Services.PlatformHelper.GetFriendlyName(value as string);
+        return name.Equals("Unknown", StringComparison.OrdinalIgnoreCase) ? "\u2014" : name;
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

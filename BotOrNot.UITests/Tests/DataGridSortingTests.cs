@@ -100,7 +100,7 @@ public class DataGridSortingTests
         var window = CreateWindowWithTestData();
         var grid = DataGridTestHelper.GetDataGrid(window, gridName);
 
-        DataGridTestHelper.ClickColumnHeader(window, grid, "Placement");
+        DataGridTestHelper.ClickColumnHeader(window, grid, "Place");
 
         var values = DataGridTestHelper.GetDisplayedValues(grid, p => p.Placement);
         Assert.That(values, Is.EqualTo(new[] { "1", "3", "10", "45", null }));
