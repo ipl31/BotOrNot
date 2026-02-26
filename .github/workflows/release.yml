@@ -46,3 +46,18 @@ jobs:
         with:
           files: ./BotOrNot-Windows-x64.zip
           generate_release_notes: true
+          append_body: true
+          body: |
+            ## About
+
+            BotOrNot is a Windows app that analyzes your Fortnite replay files and gives you stats and information about players vs bots in your matches.
+
+            ## How to Install
+
+            1. Download **BotOrNot-Windows-x64.zip** from the Assets section below
+            2. Extract the zip file to a folder of your choice
+            3. Run **BotOrNot.exe**
+
+            > **Note:** Windows SmartScreen may show a warning since the app is not code-signed. Click **More info** → **Run anyway** to proceed.
+
+            ---
