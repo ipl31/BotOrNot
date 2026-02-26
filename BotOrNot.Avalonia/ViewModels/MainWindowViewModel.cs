@@ -14,8 +14,9 @@ public class MainWindowViewModel : ReactiveObject
     private readonly IReplayService _replayService;
     private ThemePreference _currentTheme;
 
-    private static readonly string AppVersion = Assembly.GetExecutingAssembly()
-        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
+    private static readonly string AppVersion = (Assembly.GetExecutingAssembly()
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0")
+        .Split('+')[0];
 
     private static readonly string BaseTitle = $"Bot or Not? v{AppVersion}";
 
