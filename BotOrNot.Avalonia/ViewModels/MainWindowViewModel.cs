@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Reflection;
 using BotOrNot.Core.Models;
 using BotOrNot.Core.Services;
 using ReactiveUI;
@@ -11,6 +12,11 @@ public class MainWindowViewModel : ReactiveObject
 {
     private readonly IReplayService _replayService;
 
+    private static readonly string AppVersion = Assembly.GetExecutingAssembly()
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
+
+    private static readonly string BaseTitle = $"Bot or Not? v{AppVersion}";
+
     private ObservableCollection<PlayerRow> _players = new();
     private ObservableCollection<PlayerRow> _ownerEliminations = new();
     private string _ownerKillsHeader = "Your Eliminations";
@@ -18,7 +24,7 @@ public class MainWindowViewModel : ReactiveObject
     private bool _isLoading;
     private string? _errorMessage;
     private string _filterText = "";
-    private string _windowTitle = "Bot or Not?";
+    private string _windowTitle = BaseTitle;
     private string? _gameMode;
     private string? _placementText;
     private string? _durationText;
@@ -238,7 +244,7 @@ public class MainWindowViewModel : ReactiveObject
                 : null;
 
             // Set individual header bar segments
-            WindowTitle = $"Bot or Not? - {data.Metadata.FileName}";
+            WindowTitle = $"{BaseTitle} - {data.Metadata.FileName}";
             GameMode = data.Metadata.GameMode;
             PlaylistName = data.Metadata.Playlist;
             PlacementText = !string.IsNullOrEmpty(ownerPlacement) ? $"#{ownerPlacement}" : "?";

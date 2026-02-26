@@ -285,6 +285,7 @@ public sealed class ReplayService : IReplayService
                         Kills = victim.Kills,
                         TeamIndex = victim.TeamIndex,
                         DeathCause = victim.DeathCause,
+                        Placement = victim.Placement,
                         ElimTime = eventTimeStr,
                         Pickaxe = victim.Pickaxe,
                         Glider = victim.Glider

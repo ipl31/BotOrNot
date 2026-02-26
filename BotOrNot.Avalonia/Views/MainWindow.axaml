@@ -78,6 +78,11 @@
                     <TextBlock Text="{Binding DurationText}" FontSize="12" VerticalAlignment="Center" />
                 </Border>
 
+                <!-- Elims Summary -->
+                <Border Background="#E8E8E8" CornerRadius="4" Padding="8,3" Margin="0,2,6,2">
+                    <TextBlock Text="{Binding ElimsSummary}" FontSize="12" VerticalAlignment="Center" />
+                </Border>
+
                 <!-- Eliminated by (conditional) -->
                 <Border Background="#E8E8E8" CornerRadius="4" Padding="8,3" Margin="0,2,6,2"
                         IsVisible="{Binding EliminatorName, Converter={x:Static ObjectConverters.IsNotNull}}">
@@ -100,11 +105,6 @@
                             </Button.Styles>
                         </Button>
                     </StackPanel>
-                </Border>
-
-                <!-- Elims Summary -->
-                <Border Background="#E8E8E8" CornerRadius="4" Padding="8,3" Margin="0,2,6,2">
-                    <TextBlock Text="{Binding ElimsSummary}" FontSize="12" VerticalAlignment="Center" />
                 </Border>
             </WrapPanel>
         </Border>
